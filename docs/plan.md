@@ -3,24 +3,32 @@
 Każdy etap przechodzi cykl z `docs/sdd-process.md`: spec delta → testy (czerwone) → kod → pełna regresja → raport → akceptacja.
 Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostanie potwierdzony po fazie architektury.
 
-## M0 — Specyfikacja i decyzje (STEP 1) ← JESTEŚMY TUTAJ
+## M0 — Specyfikacja i decyzje (STEP 1)
 - [x] Analiza specyfikacji v1 i kart zadań
 - [x] Dokumenty: business-rules, database, api, architecture, open-questions, plan
 - [x] Decyzje PO dla reguł biznesowych (2026-10-03) i aktualizacja business-rules, database, api
 - [x] **Faza architektury:** `architecture.md` przepisany (ADR-01…23, mapa blokad, odstępstwa od spec.), Q-34 → S3 + SeaweedFS
 - [x] Hosting (Q-29): Proxmox, Cloudflare Tunnel, `pspk.pl` — wpisane do ADR-23
-- [ ] Akceptacja architektury przez PO ← NASTĘPNY KROK
+- [x] Odtworzenie `architecture.md` i `open-questions.md` (oryginały utracone, 2026-10-26)
+- [x] Decyzje 2026-10-26: Q-30 (React), Q-34 (dysk lokalny + resize), Q-37 (sesja WWW), Q-54 (design Apple)
+- [ ] Akceptacja architektury przez PO
 - [ ] Środowisko (Q-32, zmiana 2026-10-25): repozytorium GitHub z dokumentacją i `.claude/`, Claude GitHub App na repo, środowisko chmurowe Claude Code; lokalnie tylko Git
 - [ ] Pełny program nauczania (Q-36) — nie blokuje do M11
 **DoD:** wszystkie pytania blokujące M1–M3 mają status DECIDED/DEFAULT.
 
+## M0a — Makieta WWW (wyjątek od §36, decyzja Q-30) ← JESTEŚMY TUTAJ
+- [ ] `web/`: Vite + React + TS + Tailwind, tokeny designu (Apple HIG, jasny/ciemny, kolory PSPK — Q-51)
+- [ ] Ekrany uczestnika, instruktora i admina na danych przykładowych (bez backendu, bez logiki biznesowej)
+- [ ] Publikacja podglądu do akceptacji PO
+**DoD:** PO akceptuje kierunek designu.
+
 ## M1 — Szkielet i infrastruktura (STEP 2–5)
 - [ ] Struktura katalogów, `.gitignore`, `.env.example`, `git init`, `CLAUDE.md`
-- [ ] `docker-compose.yml`: postgres, magazyn S3 (+ inicjalizacja bucketu, Q-34), backend; healthchecki; wolumeny
+- [ ] `docker-compose.yml`: postgres, backend, wolumen na zdjęcia (Q-34); healthchecki; wolumeny
 - [ ] `config.py` (pydantic-settings), `database.py` (async engine/sesja), `main.py`, `GET /health`
 - [ ] `errors.py` — jednolity format błędów
 - [ ] pytest + conftest z bazą testową
-**DoD:** `docker compose up` startuje 3 usługi, `/health` = 200 (sprawdza DB), `/docs` działa, test dymny zielony.
+**DoD:** `docker compose up` startuje usługi, `/health` = 200 (sprawdza DB), `/docs` działa, test dymny zielony.
 
 ## M2 — Modele i migracja 0001 (STEP 6–7)
 - [ ] Wszystkie modele z `database.md`, w tym `user_roles`, `task_revisions`, `task_materials`, `task_revision_materials`, `refresh_tokens`
@@ -62,7 +70,7 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 **DoD:** kryteria §29 „Final pass”.
 
 ## M9 — Magazyn obiektów i pliki (STEP 15)
-- [ ] Implementacja S3 (wg Q-34); walidacja po zawartości; usuwanie EXIF; kompensacja przy błędzie transakcji
+- [ ] `LocalDiskStorage` (ADR-24); walidacja po zawartości; skalowanie do 2560 px + WebP, usuwanie EXIF (ADR-25); kompensacja przy błędzie transakcji
 - [ ] Endpointy pobierania zdjęć zgłoszeń i zdjęć wzorcowych z kontrolą uprawnień
 - [ ] Zły typ, za duży plik, test integracyjny z prawdziwym magazynem
 **DoD:** kryteria §29 „Submissions” (zdjęcia).
@@ -87,6 +95,6 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 **DoD:** API stagingu dostępne z internetu po HTTPS, tylko dla zespołu; odtworzenie z kopii sprawdzone.
 
 ## Później (po akceptacji MVP backendu, STEP 19)
-- M12 — Panel WWW (technologia: Q-30)
-- M13 — Android z kompresją zdjęć po stronie urządzenia (Q-30)
+- M12 — Panel WWW: React + TS (Q-30), podłączenie makiety do API, sesja wg ADR-26
+- M13 — Android (Kotlin) z kompresją zdjęć po stronie urządzenia (ADR-28)
 - Tematy z sekcji E w `open-questions.md`

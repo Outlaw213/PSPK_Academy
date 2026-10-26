@@ -15,7 +15,7 @@ Nic nie trafia do kodu, czego nie ma w specyfikacji. Każda zmiana zachowania za
 | `docs/database.md` | Model domenowy, maszyny stanów, ograniczenia DB | dev, po akceptacji |
 | `docs/api.md` | Kontrakt API: endpointy, role, błędy | dev, po akceptacji |
 | `docs/architecture.md` | Decyzje architektoniczne (ADR) | dev |
-| `docs/infrastructure.md` | Stan serwera Proxmox, plan zasobów i prac na serwerze | dev (inwentaryzacja), PO (wykonanie prac) |
+| `docs/infrastructure.md` | Stan serwera Proxmox, plan zasobów i prac na serwerze — *do odtworzenia przed M11a* | dev (inwentaryzacja), PO (wykonanie prac) |
 | `docs/plan.md` | Kamienie milowe i zadania | dev |
 
 ## Cykl pracy dla każdego kamienia milowego

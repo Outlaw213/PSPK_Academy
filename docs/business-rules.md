@@ -104,7 +104,7 @@ Jedna funkcja liczy statusy całej ścieżki stałą liczbą zapytań (bez N+1);
 - NFR-03 Konfiguracja przez ENV (`.env.example`), brak sekretów w repo.
 - NFR-04 Schemat wyłącznie przez Alembic; brak `create_all()` poza testami.
 - NFR-05 `/docs` i `/openapi.json` zgodne z implementacją.
-- NFR-06 Binaria w magazynie obiektów (S3/MinIO — Q-34), w PostgreSQL tylko metadane i `storage_key`.
+- NFR-06 Binaria na dysku zdjęć (`STORAGE_ROOT`, ADR-24 — Q-34), w PostgreSQL tylko metadane i `storage_key`. Zdjęcia skalowane do 2560 px, WebP, bez EXIF (ADR-25).
 - NFR-07 Interfejs po polsku; kody błędów API stabilne, po angielsku (Q-31).
 
 ## 5. Pokrycie testami (wymaganie → test)
