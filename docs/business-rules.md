@@ -16,10 +16,10 @@ Słowa kluczowe: **MUSI** = wymaganie twarde (test obowiązkowy).
 | BR-07 | Ocenia wyłącznie instruktor przypisany do zgłoszenia, o ile nadal ma uprawnienie. Wynik: `PASSED` lub `NEEDS_IMPROVEMENT`; przy `NEEDS_IMPROVEMENT` komentarz jest wymagany (niepusty po przycięciu). Jedno Assessment na Submission. | R7, §12 |
 | BR-08 | Zgłoszenie ma najwyżej `MAX_SUBMISSION_PHOTOS` (=10) zdjęć; dodanie 11. jest odrzucane i nic nie zostaje zapisane. | R8 |
 | BR-09 | Backend waliduje każdy plik: typ MIME (jpeg/png/webp — weryfikowany po zawartości, nie po nagłówku), rozmiar ≤ `MAX_UPLOAD_SIZE_MB`, liczbę plików. | R9, §14 |
-| BR-10 | Żaden automat (w tym AI) nie zmienia statusu na `PASSED`. Jedyna droga do `PASSED` to Assessment instruktora. | R10 |
+| BR-10 | Żaden automat (w tym AI) nie zmienia statusu na `PASSED`. Jedyna droga do `PASSED` to Assessment instruktora — z jednym wyjątkiem: quiz oceniany wg klucza ustalonego przez admina (BR-32). | R10, Q-60 |
 | BR-11 | Backend decyduje o rolach, dostępie, zapisach, dostępności zadań, możliwości utworzenia i wysłania próby, claim, zwolnieniu i ocenie. | R11 |
 | BR-12 | Uczestnik jest zapisany do konkretnej `PathVersion`; utworzenie nowej wersji nie zmienia jego zapisu ani historii. Zapis możliwy tylko do wersji aktywnej (`is_active`). Najwyżej jeden zapis `ACTIVE` na `LearningPath`. | §5, Q-06, Q-14 |
-| BR-13 | `Submission.status = PASSED` nie może istnieć bez Assessment z `result = PASSED` (ta sama transakcja). | §24 |
+| BR-13 | `Submission.status = PASSED` nie może istnieć bez Assessment z `result = PASSED` (ta sama transakcja). Dla quizu Assessment jest systemowe: `instructor_id` = NULL, `score` = wynik. | §24, Q-60 |
 | BR-14 | Najwyżej jedna otwarta próba (`DRAFT`/`SUBMITTED`/`UNDER_REVIEW`) na parę zadanie+uczestnik. | Q-10 |
 | BR-15 | Zapis przechodzi na `COMPLETED`, gdy wszystkie aktywne zadania wersji są `PASSED` — sprawdzane przy ocenie PASSED i przy wyłączeniu zadania. Zapis `COMPLETED` pozostaje ukończony mimo późniejszych zmian ścieżki. | Q-15, Q-42, Q-06 |
 | BR-16 | Admin może zawsze edytować treść i strukturę wersji (dodawać zadania i etapy, zmieniać kolejność, wyłączać zadania). Zaliczenia nigdy nie są cofane. Nowe zadanie jest obowiązkowe dla wszystkich zapisanych: staje się `AVAILABLE` dla każdego, kto zaliczył poprzednie, nawet jeśli jest już dalej w ścieżce. | Q-06 |
@@ -37,6 +37,8 @@ Słowa kluczowe: **MUSI** = wymaganie twarde (test obowiązkowy).
 | BR-28 | Rejestracja tworzy konto `PENDING_APPROVAL` z rolą `PARTICIPANT`; logowanie niemożliwe do akceptacji admina. Admin zatwierdza (`ACTIVE`) albo odrzuca (`REJECTED` — konto zostaje, e-mail pozostaje zajęty). Konta zakładane przez admina są od razu `ACTIVE`. Konto `DEACTIVATED` traci dostęp natychmiast, także z ważnym tokenem. | Q-21, Q-22 |
 | BR-29 | Anulowanie zapisu przez admina → otwarte próby tego zapisu (`DRAFT`/`SUBMITTED`/`UNDER_REVIEW`) → `CANCELLED`; historia dostępna tylko do odczytu. | Q-35 |
 | BR-30 | Zadanie typu `COURSE` (zajęcia stacjonarne) zalicza instruktor z uprawnieniem do zadania, wpisując wynik dla uczestnika: `PASSED` albo `NEEDS_IMPROVEMENT` (komentarz wymagany, jak BR-07), opcjonalnie ze zdjęciami. Zapis tworzy w jednej transakcji `Submission` (kolejny `attempt_number`, `recorded_by` = instruktor, `status` = wynik) i `Assessment`. Uczestnik nie tworzy szkicu ani nie wysyła zgłoszenia dla kursu (409 `TASK_IS_COURSE`). Wynik można wpisać, gdy zapis jest `ACTIVE` i spełniona jest bramka etapu (BR-31); po `PASSED` — nie (BR-05). Zakaz samooceny (BR-25) obowiązuje. | Q-56 |
+| BR-32 | Quiz (`QUIZ`): pytania zamknięte jedno- (`SINGLE`) lub wielokrotnego wyboru (`MULTI`) z kluczem i progiem zaliczenia (`pass_threshold`, domyślnie 80%) w rewizji zadania. Uczestnik wysyła odpowiedzi na wszystkie pytania w jednym żądaniu; backend liczy wynik (pytanie zaliczone tylko przy dokładnie poprawnym zbiorze odpowiedzi) i w jednej transakcji tworzy `Submission` (z odpowiedziami i rewizją) oraz systemowe `Assessment`: wynik ≥ próg → `PASSED`, inaczej `NEEDS_IMPROVEMENT` z wynikiem. Bez szkicu i bez kolejki instruktora. Klucz nigdy nie trafia do uczestnika przed zaliczeniem; po niezaliczeniu widzi tylko wynik. Kolejność i bramka etapu jak dla prac (BR-02, BR-31). | Q-60 |
+| BR-33 | Treść każdej rewizji zadania może zawierać tekst Markdown oraz załączniki: pliki PDF (≤ `MAX_ATTACHMENT_SIZE_MB`, domyślnie 20, weryfikacja po zawartości) i linki do filmów (tylko `https://`). Załączniki są częścią rewizji (BR-19) i są dostępne tylko dla uprawnionych (BR-17). | Q-62 |
 | BR-31 | Bramka etapu: zadania etapu N (prace i kursy) są dostępne dopiero, gdy wszystkie aktywne zadania etapów o mniejszej pozycji mają `PASSED`. Kursy w obrębie etapu nie blokują prac własnych i odwrotnie. | Q-57 |
 
 ## 2. Wyliczanie statusu zadania (jedno miejsce: `task_service`)
@@ -62,8 +64,9 @@ Otwarta próba ma pierwszeństwo w wyświetlaniu przed blokadą kolejności (Q-4
 
 | Operacja | Warunek |
 |---|---|
-| Utworzenie szkicu | `E.status = ACTIVE`, zadanie aktywne i w `V`, nie kurs, status ∈ {`AVAILABLE`, `NEEDS_IMPROVEMENT`} |
+| Utworzenie szkicu | `E.status = ACTIVE`, zadanie aktywne i w `V`, nie kurs i nie quiz, status ∈ {`AVAILABLE`, `NEEDS_IMPROVEMENT`} |
 | Wysłanie szkicu | `E.status = ACTIVE`, zadanie aktywne, nie kurs, `gate(stage(Ti))`, brak `prev(Ti)` lub `passed(prev(Ti))`, BR-22 |
+| Rozwiązanie quizu | jak wysłanie szkicu (bez BR-22), status ∈ {`AVAILABLE`, `NEEDS_IMPROVEMENT`} |
 | Wpisanie wyniku kursu (instruktor) | `E.status = ACTIVE`, zadanie aktywne, kurs, `gate(stage(Ti))`, nie `passed(Ti)`, uprawnienie instruktora, BR-25 |
 | Claim / ocena zgłoszenia | niezależne od blokady kolejności (zgłoszenie już wysłane) |
 
@@ -83,7 +86,7 @@ Jedna funkcja liczy statusy całej ścieżki stałą liczbą zapytań (bez N+1);
 
 ### Admin
 - FR-ADM-01 Użytkownicy: lista z filtrami (w tym `PENDING_APPROVAL`), utworzenie (od razu `ACTIVE`, z rolami), edycja danych i ról, dezaktywacja/reaktywacja, zatwierdzenie/odrzucenie rejestracji, ustawienie nowego hasła (unieważnia sesje). Bez usuwania kont.
-- FR-ADM-02 Ścieżki, wersje (pusta lub kopia — BR-24, Q-07; aktywacja/dezaktywacja zapisów), etapy, zadania (każda edycja = nowa rewizja), zdjęcia wzorcowe, zmiana kolejności, wyłączanie/włączanie zadań (BR-20).
+- FR-ADM-02 Ścieżki, wersje (pusta lub kopia — BR-24, Q-07; aktywacja/dezaktywacja zapisów), etapy, zadania wszystkich typów (praca własna, kurs, teoria, quiz; każda edycja = nowa rewizja), przenoszenie zadania między etapami, pytania quizu i próg, materiały (Markdown, PDF, filmy — BR-33), zdjęcia wzorcowe, zmiana kolejności, wyłączanie/włączanie zadań (BR-20).
 - FR-ADM-03 Zapisy: utworzenie (`PATH_ASSIGNED`), lista z filtrami, anulowanie (BR-29).
 - FR-ADM-04 Uprawnienia instruktorów: nadanie (wersja lub etap), lista, odebranie (BR-26 — automatyczne zwolnienie).
 - FR-ADM-05 Podgląd zgłoszeń i ocen wszystkich uczestników z filtrami (ścieżka/wersja, status, uczestnik, instruktor). Tylko odczyt.
@@ -96,6 +99,8 @@ Jedna funkcja liczy statusy całej ścieżki stałą liczbą zapytań (bez N+1);
 - FR-PAR-03 Szkic: utworzenie, edycja komentarza, dodawanie/usuwanie zdjęć, wysłanie, porzucenie (BR-21–BR-23).
 - FR-PAR-04 Wycofanie wysłanego zgłoszenia przed claim (BR-23).
 - FR-PAR-05 Historia prób zadania i szczegóły zgłoszenia z oceną i rewizją zadania.
+- FR-PAR-06 Rozwiązanie quizu z natychmiastowym wynikiem (BR-32).
+- FR-PAR-07 Odczyt materiałów zadania: Markdown, PDF, linki do filmów (BR-33).
 
 ### Instruktor
 - FR-INS-01 Kolejka: zgłoszenia `SUBMITTED` w zakresie uprawnień (bez własnych) + zgłoszenia przejęte przez siebie.
@@ -154,4 +159,6 @@ Jedna funkcja liczy statusy całej ścieżki stałą liczbą zapytań (bez N+1);
 | + rejestracja oczekująca → login 403; zatwierdzenie → login OK | `test_auth.py` | BR-28 |
 | + anulowanie zapisu anuluje otwarte próby | `test_enrollments.py` | BR-29 |
 | + kurs: uczestnik nie tworzy szkicu (409 TASK_IS_COURSE); instruktor wpisuje wynik; PASSED ostateczne; NEEDS_IMPROVEMENT wymaga komentarza | `test_courses.py` | BR-30 |
+| + quiz: wynik ≥ próg → PASSED bez instruktora; poniżej → NEEDS_IMPROVEMENT, kolejna próba możliwa; klucz niewidoczny przed zaliczeniem; brak szkicu (409 TASK_IS_QUIZ) | `test_quiz.py` | BR-32, BR-10, BR-13 |
+| + załączniki: PDF po zawartości, za duży → 413, link inny niż https → 422, cudzy załącznik → 404 | `test_attachments.py` | BR-33 |
 | + kurs nie blokuje prac własnych w etapie; etap 2 zablokowany do zaliczenia całego etapu 1 (z kursami) | `test_tasks.py` | BR-02, BR-31 |

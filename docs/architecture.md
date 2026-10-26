@@ -52,4 +52,6 @@
 | MinIO | dysk lokalny + przetwarzanie zdjęć | Q-34, ADR-24, ADR-25 |
 | rejestracja = aktywne konto | `PENDING_APPROVAL` do akceptacji admina | Q-21 |
 | typy zadań PRACTICAL/THEORY/QUIZ | + `COURSE` zaliczany wpisem instruktora | Q-56 |
+| R10: tylko instruktor zalicza | quiz zaliczany automatycznie wg klucza admina; AI nadal nie zalicza | Q-60 |
+| treść zadania jako tekst | Markdown + załączniki PDF i linki do filmów | Q-62 |
 | jedna kolejność przez całą ścieżkę (§9) | kolejność prac w etapie + bramka etapu; kursy poza kolejnością | Q-57 |

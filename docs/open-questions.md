@@ -59,3 +59,7 @@
 | Q-36 | **Program „Podstawy kowalstwa”** wg `docs/assets/lista-zadan-sciezki.jpeg`: Etap 1 „Kowalstwo podstawowe” — 15 prac własnych (2 tyg.) + 4 kursy; Etap 2 „Kowalstwo zaawansowane” — 9 prac własnych (4 tyg.) + 5 kursów. Wzór karty: `docs/assets/karta-*.png`. | 2026-10-26 |
 | Q-56 | **Typ zadania „Kurs” (`COURSE`):** zajęcia stacjonarne 1–2 dni. Uczestnik nic nie wysyła; instruktor z uprawnieniem wpisuje wynik (zaliczony / do powtórki z komentarzem), opcjonalnie ze zdjęciami (BR-30). | 2026-10-26 |
 | Q-57 | **Kolejność z kursami:** kursy poza kolejnością w etapie; prace własne po kolei; etap N+1 odblokowany po zaliczeniu wszystkich zadań (z kursami) etapów wcześniejszych (BR-02, BR-31). | 2026-10-26 |
+| Q-60 | **Quiz zaliczany automatycznie** (świadomy wyjątek od R10): pytania jedno- i wielokrotnego wyboru z kluczem, próg zaliczenia na quizie (domyślnie 80%), wynik od razu, próby bez limitu; po niezaliczeniu widać wynik, bez poprawnych odpowiedzi (BR-32). | 2026-10-26 |
+| Q-61 | **Teoria:** materiał + polecenie, odpowiedź tekstem lub zdjęciem, ocenia instruktor (BR-22 bez zmian). | 2026-10-26 |
+| Q-62 | **Materiały zadań:** treść Markdown, załączniki PDF (≤ 20 MB, na dysku), linki do filmów (https, otwierane w nowej karcie) — dla każdego typu zadania (BR-33). | 2026-10-26 |
+| Q-63 | **Ścieżki układa admin:** kolejność etapów i zadań, treść, typ każdego zadania; może dodawać zadania teoretyczne i quizy do dowolnego etapu (FR-ADM-02). Program z listy (Q-36) to tylko dane startowe (seed). | 2026-10-26 |

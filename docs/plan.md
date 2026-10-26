@@ -20,7 +20,9 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [ ] `web/`: Vite + React + TS + Tailwind, tokeny designu (Apple HIG, jasny/ciemny, kolory PSPK — Q-51)
 - [ ] Ekrany uczestnika, instruktora i admina na danych przykładowych (bez backendu, bez logiki biznesowej)
 - [x] Publikacja podglądu do akceptacji PO (v1)
-- [ ] v2: kolory i logo PSPK (Q-55), program z listy (Q-36), kursy (Q-56, Q-57)
+- [x] v2: kolory i logo PSPK (Q-55), program z listy (Q-36), kursy (Q-56, Q-57)
+- [x] Kierunek designu zaakceptowany przez PO (2026-10-26)
+- [ ] v3: kreator ścieżki (dodawanie zadań i etapów, typy), edytor quizu, teoria z materiałami (Q-60…Q-62)
 **DoD:** PO akceptuje kierunek designu.
 
 ## M1 — Szkielet i infrastruktura (STEP 2–5)
@@ -45,7 +47,7 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 **DoD:** kryteria §29 „Authentication”.
 
 ## M4 — Treść edukacyjna, rewizje i wersje (STEP 9)
-- [ ] Admin: ścieżki, wersje (kopia z uprawnieniami, włączanie zapisów), etapy, zadania z rewizjami, zdjęcia wzorcowe (magazyn in-memory), kolejność, wyłączanie zadań
+- [ ] Admin: ścieżki, wersje (kopia z uprawnieniami, włączanie zapisów), etapy, zadania wszystkich typów z rewizjami (pytania quizu, Markdown, linki do filmów, przenoszenie między etapami), zdjęcia wzorcowe (magazyn in-memory), kolejność, wyłączanie zadań
 - [ ] `test_paths.py`, `test_revisions.py` (część admin), `test_structure.py` (część bez zgłoszeń): TEST 13, BR-16, BR-19, BR-24
 **DoD:** kryteria §29 „Learning paths”.
 
@@ -68,12 +70,13 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 ## M8 — Ocena i ostateczne zaliczenie (STEP 14)
 - [ ] Assessment, przejścia stanów, automatyczne COMPLETED zapisu, zgłoszenie oceniane wg swojej rewizji
 - [ ] Wyniki kursów przez instruktora (BR-30, FR-INS-06, `test_courses.py`)
+- [ ] Quiz z automatyczną oceną (BR-32, `test_quiz.py`)
 - [ ] TEST 3, TEST 4, TEST 6, BR-07, BR-13, BR-15, `test_structure.py` (część ze zgłoszeniami), `test_enrollments.py` (BR-29)
 **DoD:** kryteria §29 „Final pass”.
 
 ## M9 — Magazyn obiektów i pliki (STEP 15)
 - [ ] `LocalDiskStorage` (ADR-24); walidacja po zawartości; skalowanie do 2560 px + WebP, usuwanie EXIF (ADR-25); kompensacja przy błędzie transakcji
-- [ ] Endpointy pobierania zdjęć zgłoszeń i zdjęć wzorcowych z kontrolą uprawnień
+- [ ] Endpointy pobierania zdjęć zgłoszeń, zdjęć wzorcowych i załączników PDF z kontrolą uprawnień (BR-33, `test_attachments.py`)
 - [ ] Zły typ, za duży plik, test integracyjny z prawdziwym magazynem
 **DoD:** kryteria §29 „Submissions” (zdjęcia).
 

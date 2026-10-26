@@ -23,10 +23,12 @@ Role sprawdzane jako przynależność do zbioru ról użytkownika (BR-27).
 | GET | /me/paths | 200 lista zapisów | |
 | GET | /me/paths/{path_version_id} | 200 wersja + etapy + zadania (bez statusów) | 404 |
 | GET | /me/paths/{path_version_id}/progress | 200 struktura z §17 (nazwy wg widocznej rewizji) | 404 |
-| GET | /tasks/{task_id} | 200 zadanie: widoczna rewizja (BR-19) + `status` + zdjęcia wzorcowe | 404 |
+| GET | /tasks/{task_id} | 200 zadanie: widoczna rewizja (BR-19) + `status` + zdjęcia wzorcowe + **[+]** `content_md`, załączniki, pytania quizu (bez `is_correct` przed zaliczeniem) | 404 |
+| GET | **[+]** /tasks/{task_id}/attachments/{attachment_id} | 200 PDF (stream) | 404 |
+| POST | **[+]** /tasks/{task_id}/quiz-attempts | 201 submission + assessment z `score` (`answers: [{question_id, option_ids[]}]`) | 403 NO_ACTIVE_ENROLLMENT, 409 TASK_LOCKED, 409 TASK_ALREADY_PASSED, 409 TASK_NOT_QUIZ, 422 QUIZ_ANSWERS_INVALID |
 | GET | **[+]** /tasks/{task_id}/materials/{material_id} | 200 obraz (stream) | 404 |
 | GET | /tasks/{task_id}/submissions | 200 historia prób (z ocenami) | 404 |
-| POST | /tasks/{task_id}/submissions | 201 szkic `DRAFT` (JSON: `comment?`) | 403 NO_ACTIVE_ENROLLMENT, 409 TASK_LOCKED, 409 TASK_ALREADY_PASSED, 409 SUBMISSION_PENDING, 409 TASK_IS_COURSE |
+| POST | /tasks/{task_id}/submissions | 201 szkic `DRAFT` (JSON: `comment?`) | 403 NO_ACTIVE_ENROLLMENT, 409 TASK_LOCKED, 409 TASK_ALREADY_PASSED, 409 SUBMISSION_PENDING, 409 TASK_IS_COURSE, 409 TASK_IS_QUIZ |
 | GET | /submissions/{submission_id} | 200 zgłoszenie + zdjęcia + ocena + rewizja zadania | 404 |
 | PATCH | **[+]** /submissions/{id} | 200 (`comment`) — tylko `DRAFT` | 409 INVALID_STATE_TRANSITION |
 | POST | **[+]** /submissions/{id}/photos | 201 zdjęcie (multipart, 1 plik) — tylko `DRAFT` | 409 INVALID_STATE_TRANSITION, 422 TOO_MANY_PHOTOS, 422 INVALID_PHOTO_TYPE, 413 PHOTO_TOO_LARGE |
@@ -63,6 +65,8 @@ Role sprawdzane jako przynależność do zbioru ról użytkownika (BR-27).
 | POST / PUT | /admin/tasks, /admin/tasks/{id} | każdy zapis treści tworzy nową rewizję (BR-19); `material_ids[]` = uporządkowana lista zdjęć wzorcowych |
 | GET | **[+]** /admin/tasks/{id}/revisions | historia rewizji |
 | POST | **[+]** /admin/tasks/{id}/materials | upload zdjęcia wzorcowego (multipart) → `material_id`, podpinany przez PUT zadania |
+| POST | **[+]** /admin/tasks/{id}/attachments | upload PDF (multipart) → `attachment_id`; linki do filmów i pytania quizu przekazywane w PUT zadania (nowa rewizja) → 422 QUIZ_INVALID, 413 ATTACHMENT_TOO_LARGE, 422 INVALID_ATTACHMENT_TYPE |
+| PUT | **[+]** /admin/tasks/{id}/stage | przeniesienie zadania do innego etapu tej samej wersji (na koniec) |
 | POST | **[+]** /admin/tasks/{id}/deactivate, /activate | BR-20 → 409 TASK_HAS_PENDING_SUBMISSIONS |
 | PUT | **[+]** /admin/stages/{id}/tasks/order, /admin/path-versions/{id}/stages/order | zmiana kolejności całej listy w jednej transakcji (BR-16) |
 | GET / POST | /admin/enrollments | lista z filtrami (`path_version_id`, `user_id`, `status`); utworzenie → 201 (albo 200 przy reaktywacji anulowanego zapisu, Q-45), 409 ALREADY_ENROLLED, 409 PATH_VERSION_INACTIVE, 422 USER_NOT_PARTICIPANT |
@@ -105,6 +109,12 @@ Listy są stronicowane (`limit`, `offset`).
 | ALREADY_ENROLLED | 409 | zapis do tej wersji istnieje albo aktywny zapis do innej wersji tej ścieżki |
 | USER_NOT_PARTICIPANT | 422 | zapis użytkownika bez roli PARTICIPANT |
 | USER_NOT_INSTRUCTOR | 422 | uprawnienie dla użytkownika bez roli INSTRUCTOR |
+| TASK_IS_QUIZ | 409 | szkic dla quizu — quiz rozwiązuje się przez `/quiz-attempts` (BR-32) |
+| TASK_NOT_QUIZ | 409 | `/quiz-attempts` dla zadania innego typu |
+| QUIZ_ANSWERS_INVALID | 422 | brak odpowiedzi na pytanie, nieznana opcja, kilka opcji przy `SINGLE` |
+| QUIZ_INVALID | 422 | quiz bez pytań, pytanie bez poprawnej odpowiedzi, próg poza 1–100 |
+| ATTACHMENT_TOO_LARGE | 413 | > MAX_ATTACHMENT_SIZE_MB |
+| INVALID_ATTACHMENT_TYPE | 422 | plik inny niż PDF (po zawartości) |
 | TASK_IS_COURSE | 409 | uczestnik próbuje utworzyć zgłoszenie dla kursu (BR-30) |
 | CONCURRENT_UPDATE | 409 | wykryte zakleszczenie przy równoległych operacjach — klient może ponowić (ADR-10) |
 
@@ -115,4 +125,4 @@ Format: `{"error": {"code": "TASK_LOCKED", "message": "Task is locked until the 
 `USER_REGISTERED`, `USER_APPROVED`, `USER_REJECTED`, `USER_CREATED`, `USER_UPDATED`, `USER_PASSWORD_RESET`, `USER_PASSWORD_CHANGED`, `USER_LOGIN`,
 `PATH_CREATED`, `PATH_VERSION_CREATED`, `PATH_VERSION_UPDATED`, `STAGE_CREATED`, `STAGE_UPDATED`, `TASK_CREATED`, `TASK_UPDATED` (nowa rewizja), `TASK_DEACTIVATED`, `TASK_ACTIVATED`, `ORDER_CHANGED`,
 `PATH_ASSIGNED`, `ENROLLMENT_CANCELLED`, `ENROLLMENT_COMPLETED`, `PERMISSION_GRANTED`, `PERMISSION_REVOKED`,
-`SUBMISSION_CREATED`, `COURSE_RESULT_RECORDED`, `SUBMISSION_SUBMITTED`, `SUBMISSION_CANCELLED`, `SUBMISSION_CLAIMED`, `SUBMISSION_RELEASED`, `SUBMISSION_ASSESSED`, `TASK_PASSED`, `TASK_REJECTED` (= NEEDS_IMPROVEMENT).
+`SUBMISSION_CREATED`, `COURSE_RESULT_RECORDED`, `QUIZ_ATTEMPTED`, `SUBMISSION_SUBMITTED`, `SUBMISSION_CANCELLED`, `SUBMISSION_CLAIMED`, `SUBMISSION_RELEASED`, `SUBMISSION_ASSESSED`, `TASK_PASSED`, `TASK_REJECTED` (= NEEDS_IMPROVEMENT).
