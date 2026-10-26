@@ -26,7 +26,7 @@ Role sprawdzane jako przynależność do zbioru ról użytkownika (BR-27).
 | GET | /tasks/{task_id} | 200 zadanie: widoczna rewizja (BR-19) + `status` + zdjęcia wzorcowe | 404 |
 | GET | **[+]** /tasks/{task_id}/materials/{material_id} | 200 obraz (stream) | 404 |
 | GET | /tasks/{task_id}/submissions | 200 historia prób (z ocenami) | 404 |
-| POST | /tasks/{task_id}/submissions | 201 szkic `DRAFT` (JSON: `comment?`) | 403 NO_ACTIVE_ENROLLMENT, 409 TASK_LOCKED, 409 TASK_ALREADY_PASSED, 409 SUBMISSION_PENDING |
+| POST | /tasks/{task_id}/submissions | 201 szkic `DRAFT` (JSON: `comment?`) | 403 NO_ACTIVE_ENROLLMENT, 409 TASK_LOCKED, 409 TASK_ALREADY_PASSED, 409 SUBMISSION_PENDING, 409 TASK_IS_COURSE |
 | GET | /submissions/{submission_id} | 200 zgłoszenie + zdjęcia + ocena + rewizja zadania | 404 |
 | PATCH | **[+]** /submissions/{id} | 200 (`comment`) — tylko `DRAFT` | 409 INVALID_STATE_TRANSITION |
 | POST | **[+]** /submissions/{id}/photos | 201 zdjęcie (multipart, 1 plik) — tylko `DRAFT` | 409 INVALID_STATE_TRANSITION, 422 TOO_MANY_PHOTOS, 422 INVALID_PHOTO_TYPE, 413 PHOTO_TOO_LARGE |
@@ -43,6 +43,9 @@ Role sprawdzane jako przynależność do zbioru ról użytkownika (BR-27).
 | POST | /submissions/{id}/claim | 200 `UNDER_REVIEW` | 403 INSTRUCTOR_NOT_AUTHORIZED, 403 SELF_ASSESSMENT_FORBIDDEN, 409 SUBMISSION_ALREADY_CLAIMED, 409 INVALID_STATE_TRANSITION |
 | POST | /submissions/{id}/assessment | 201 assessment (`result`, `comment`) | 403 NOT_ASSIGNED_INSTRUCTOR, 403 INSTRUCTOR_NOT_AUTHORIZED, 409 INVALID_STATE_TRANSITION, 422 ASSESSMENT_COMMENT_REQUIRED |
 | POST | **[+]** /submissions/{id}/release | 200 `SUBMITTED` — przypisany instruktor lub ADMIN | 403 NOT_ASSIGNED_INSTRUCTOR, 409 INVALID_STATE_TRANSITION |
+| GET | **[+]** /instructor/courses?path_version_id= | 200 kursy w zakresie uprawnień | |
+| GET | **[+]** /instructor/courses/{task_id}/participants | 200 uczestnicy z aktywnym zapisem + status kursu (FR-INS-06) | 403 INSTRUCTOR_NOT_AUTHORIZED, 404 |
+| POST | **[+]** /instructor/courses/{task_id}/results | 201 submission + assessment (`user_id`, `result`, `comment`; zdjęcia potem przez `/submissions/{id}/photos` instruktora) | 403 INSTRUCTOR_NOT_AUTHORIZED, 403 SELF_ASSESSMENT_FORBIDDEN, 403 NO_ACTIVE_ENROLLMENT, 409 TASK_LOCKED, 409 TASK_ALREADY_PASSED, 422 ASSESSMENT_COMMENT_REQUIRED |
 
 ### Admin (`ADMIN`)
 | Metoda | Ścieżka | Uwagi |
@@ -102,6 +105,7 @@ Listy są stronicowane (`limit`, `offset`).
 | ALREADY_ENROLLED | 409 | zapis do tej wersji istnieje albo aktywny zapis do innej wersji tej ścieżki |
 | USER_NOT_PARTICIPANT | 422 | zapis użytkownika bez roli PARTICIPANT |
 | USER_NOT_INSTRUCTOR | 422 | uprawnienie dla użytkownika bez roli INSTRUCTOR |
+| TASK_IS_COURSE | 409 | uczestnik próbuje utworzyć zgłoszenie dla kursu (BR-30) |
 | CONCURRENT_UPDATE | 409 | wykryte zakleszczenie przy równoległych operacjach — klient może ponowić (ADR-10) |
 
 Format: `{"error": {"code": "TASK_LOCKED", "message": "Task is locked until the previous task is passed.", "details": null}}`
@@ -111,4 +115,4 @@ Format: `{"error": {"code": "TASK_LOCKED", "message": "Task is locked until the 
 `USER_REGISTERED`, `USER_APPROVED`, `USER_REJECTED`, `USER_CREATED`, `USER_UPDATED`, `USER_PASSWORD_RESET`, `USER_PASSWORD_CHANGED`, `USER_LOGIN`,
 `PATH_CREATED`, `PATH_VERSION_CREATED`, `PATH_VERSION_UPDATED`, `STAGE_CREATED`, `STAGE_UPDATED`, `TASK_CREATED`, `TASK_UPDATED` (nowa rewizja), `TASK_DEACTIVATED`, `TASK_ACTIVATED`, `ORDER_CHANGED`,
 `PATH_ASSIGNED`, `ENROLLMENT_CANCELLED`, `ENROLLMENT_COMPLETED`, `PERMISSION_GRANTED`, `PERMISSION_REVOKED`,
-`SUBMISSION_CREATED`, `SUBMISSION_SUBMITTED`, `SUBMISSION_CANCELLED`, `SUBMISSION_CLAIMED`, `SUBMISSION_RELEASED`, `SUBMISSION_ASSESSED`, `TASK_PASSED`, `TASK_REJECTED` (= NEEDS_IMPROVEMENT).
+`SUBMISSION_CREATED`, `COURSE_RESULT_RECORDED`, `SUBMISSION_SUBMITTED`, `SUBMISSION_CANCELLED`, `SUBMISSION_CLAIMED`, `SUBMISSION_RELEASED`, `SUBMISSION_ASSESSED`, `TASK_PASSED`, `TASK_REJECTED` (= NEEDS_IMPROVEMENT).

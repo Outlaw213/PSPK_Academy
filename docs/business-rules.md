@@ -8,7 +8,7 @@ Słowa kluczowe: **MUSI** = wymaganie twarde (test obowiązkowy).
 | ID | Reguła | Źródło |
 |---|---|---|
 | BR-01 | Uczestnik MUSI widzieć wszystkie aktywne etapy i zadania wersji ścieżki, do której jest zapisany, każde ze statusem. Zadanie `LOCKED` jest widoczne, ale nie można go rozpocząć. Wyłączone zadania i etapy bez aktywnych zadań nie są pokazywane. | R1, Q-44 |
-| BR-02 | Zadanie MUSI być `LOCKED`, dopóki poprzednie aktywne zadanie nie ma statusu `PASSED`. Kolejność: aktualne `Stage.position`, potem `Task.position`, przez granice etapów. | R2, §9 |
+| BR-02 | Zadanie niebędące kursem MUSI być `LOCKED`, dopóki poprzednie aktywne zadanie niebędące kursem w tym samym etapie nie ma statusu `PASSED`. Kolejność: `Task.position` w etapie. Pierwsze zadanie etapu podlega bramce etapu (BR-31). | R2, §9, Q-57 |
 | BR-03 | Liczba prób jest nieograniczona. W kodzie nie istnieje `MAX_ATTEMPTS`. | R3 |
 | BR-04 | Każda próba to osobny rekord `Submission`; nigdy nie jest nadpisywana ani usuwana. `attempt_number = max(istniejące dla task+user) + 1`, nadawany przy utworzeniu szkicu; pierwsza = 1. | R4, §10 |
 | BR-05 | `PASSED` jest ostateczne: brak nowych prób, brak zmiany wyniku, brak ponownego otwarcia — także po zmianach treści lub kolejności ścieżki. | R5, §13, Q-06 |
@@ -28,7 +28,7 @@ Słowa kluczowe: **MUSI** = wymaganie twarde (test obowiązkowy).
 | BR-19 | Każda edycja treści zadania (w tym listy zdjęć wzorcowych) tworzy nową, niezmienną rewizję. Zgłoszenie zapamiętuje rewizję z chwili wysłania. Przy zgłoszeniu (uczestnik i instruktor) oraz przy zadaniu zaliczonym widać rewizję z tego zgłoszenia; w pozostałych przypadkach — aktualną. | Q-06, Q-43 |
 | BR-20 | Wyłączenie zadania usuwa je z kolejności i z widoku ścieżki; historia prób pozostaje dostępna. Niedozwolone, gdy zadanie ma zgłoszenia `SUBMITTED`/`UNDER_REVIEW` (409); otwarte szkice → `CANCELLED`. | Q-08, Q-44 |
 | BR-21 | Próba zaczyna się jako szkic (`DRAFT`). W szkicu uczestnik dodaje i usuwa zdjęcia pojedynczo oraz edytuje komentarz. Wysłanie (`SUBMITTED`) wymaga: aktywnego zapisu, zadania niezablokowanego kolejnością i spełnienia BR-22. Po wysłaniu treść zgłoszenia jest niezmienna. | Q-03, Q-40 |
-| BR-22 | Wymagania przy wysyłce: `PRACTICAL` ≥ 1 zdjęcie; `THEORY`/`QUIZ` niepusty komentarz lub ≥ 1 zdjęcie. Typ zadania z aktualnej rewizji. | Q-18 |
+| BR-22 | Wymagania przy wysyłce: `PRACTICAL` ≥ 1 zdjęcie; `THEORY`/`QUIZ` niepusty komentarz lub ≥ 1 zdjęcie. `COURSE` — uczestnik nie wysyła zgłoszeń (BR-30). Typ zadania z aktualnej rewizji. | Q-18, Q-56 |
 | BR-23 | Uczestnik może porzucić szkic albo wycofać wysłane zgłoszenie przed claim → `CANCELLED` (zostaje w historii). Po claim — nie. | Q-11 |
 | BR-24 | Uprawnienie instruktora do wersji ścieżki obejmuje wszystkie jej etapy; uprawnienie do etapu — tylko ten etap; obowiązuje suma. Kopia wersji kopiuje uprawnienia (etapowe mapowane na nowe etapy). | Q-13 |
 | BR-25 | Nikt nie przejmuje ani nie ocenia własnego zgłoszenia. | Q-16 |
@@ -36,10 +36,13 @@ Słowa kluczowe: **MUSI** = wymaganie twarde (test obowiązkowy).
 | BR-27 | Użytkownik może mieć kilka ról (`PARTICIPANT`, `INSTRUCTOR`, `ADMIN`); dostęp wynika z sumy ról. Ocena wymaga roli `INSTRUCTOR` + uprawnienia — sama rola `ADMIN` nie wystarcza. Zapis na ścieżkę wymaga roli `PARTICIPANT`. | Q-16, Q-17 |
 | BR-28 | Rejestracja tworzy konto `PENDING_APPROVAL` z rolą `PARTICIPANT`; logowanie niemożliwe do akceptacji admina. Admin zatwierdza (`ACTIVE`) albo odrzuca (`REJECTED` — konto zostaje, e-mail pozostaje zajęty). Konta zakładane przez admina są od razu `ACTIVE`. Konto `DEACTIVATED` traci dostęp natychmiast, także z ważnym tokenem. | Q-21, Q-22 |
 | BR-29 | Anulowanie zapisu przez admina → otwarte próby tego zapisu (`DRAFT`/`SUBMITTED`/`UNDER_REVIEW`) → `CANCELLED`; historia dostępna tylko do odczytu. | Q-35 |
+| BR-30 | Zadanie typu `COURSE` (zajęcia stacjonarne) zalicza instruktor z uprawnieniem do zadania, wpisując wynik dla uczestnika: `PASSED` albo `NEEDS_IMPROVEMENT` (komentarz wymagany, jak BR-07), opcjonalnie ze zdjęciami. Zapis tworzy w jednej transakcji `Submission` (kolejny `attempt_number`, `recorded_by` = instruktor, `status` = wynik) i `Assessment`. Uczestnik nie tworzy szkicu ani nie wysyła zgłoszenia dla kursu (409 `TASK_IS_COURSE`). Wynik można wpisać, gdy zapis jest `ACTIVE` i spełniona jest bramka etapu (BR-31); po `PASSED` — nie (BR-05). Zakaz samooceny (BR-25) obowiązuje. | Q-56 |
+| BR-31 | Bramka etapu: zadania etapu N (prace i kursy) są dostępne dopiero, gdy wszystkie aktywne zadania etapów o mniejszej pozycji mają `PASSED`. Kursy w obrębie etapu nie blokują prac własnych i odwrotnie. | Q-57 |
 
 ## 2. Wyliczanie statusu zadania (jedno miejsce: `task_service`)
 
 Wejście: zapis uczestnika `E` do wersji `V`; aktywne zadania `T1..Tn` uporządkowane po `(stage.position, task.position)`.
+`prev(Ti)` = poprzednie aktywne zadanie niebędące kursem w tym samym etapie; `gate(S)` = wszystkie aktywne zadania etapów o pozycji < `S.position` mają `PASSED` (Q-57).
 Dla każdego `Ti`: `latest(Ti)` = zgłoszenie o najwyższym `attempt_number` z pominięciem `CANCELLED`; `passed(Ti)` = istnieje zgłoszenie `PASSED`.
 
 ```
@@ -48,7 +51,9 @@ inaczej jeśli latest(Ti).status = DRAFT            → IN_PROGRESS
 inaczej jeśli latest(Ti).status = SUBMITTED        → SUBMITTED
 inaczej jeśli latest(Ti).status = UNDER_REVIEW     → UNDER_REVIEW
 inaczej jeśli E.status ≠ ACTIVE                    → LOCKED          (Q-39)
-inaczej jeśli i > 1 i nie passed(Ti-1)             → LOCKED
+inaczej jeśli nie gate(stage(Ti))                  → LOCKED          (BR-31)
+inaczej jeśli Ti nie jest kursem i prev(Ti) istnieje i nie passed(prev(Ti))
+                                                   → LOCKED          (BR-02)
 inaczej jeśli latest(Ti).status = NEEDS_IMPROVEMENT → NEEDS_IMPROVEMENT
 inaczej                                            → AVAILABLE
 ```
@@ -57,8 +62,9 @@ Otwarta próba ma pierwszeństwo w wyświetlaniu przed blokadą kolejności (Q-4
 
 | Operacja | Warunek |
 |---|---|
-| Utworzenie szkicu | `E.status = ACTIVE`, zadanie aktywne i w `V`, status ∈ {`AVAILABLE`, `NEEDS_IMPROVEMENT`} |
-| Wysłanie szkicu | `E.status = ACTIVE`, zadanie aktywne, `i = 1` lub `passed(Ti-1)`, BR-22 |
+| Utworzenie szkicu | `E.status = ACTIVE`, zadanie aktywne i w `V`, nie kurs, status ∈ {`AVAILABLE`, `NEEDS_IMPROVEMENT`} |
+| Wysłanie szkicu | `E.status = ACTIVE`, zadanie aktywne, nie kurs, `gate(stage(Ti))`, brak `prev(Ti)` lub `passed(prev(Ti))`, BR-22 |
+| Wpisanie wyniku kursu (instruktor) | `E.status = ACTIVE`, zadanie aktywne, kurs, `gate(stage(Ti))`, nie `passed(Ti)`, uprawnienie instruktora, BR-25 |
 | Claim / ocena zgłoszenia | niezależne od blokady kolejności (zgłoszenie już wysłane) |
 
 Widoczna rewizja zadania (BR-19): rewizja zgłoszenia `PASSED`, jeśli istnieje; inaczej aktualna.
@@ -97,6 +103,7 @@ Jedna funkcja liczy statusy całej ścieżki stałą liczbą zapytań (bez N+1);
 - FR-INS-03 Claim (§11, BR-06, BR-25).
 - FR-INS-04 Ocena (§12, BR-07).
 - FR-INS-05 Zwolnienie przejętego zgłoszenia (BR-26).
+- FR-INS-06 Kursy: lista uczestników zapisanych na wersję z ich statusem dla kursu; wpisanie wyniku (BR-30).
 
 ## 4. Wymagania niefunkcjonalne (NFR)
 - NFR-01 Jednolity format błędów: `{"error": {"code", "message", "details?"}}`, również dla 401/404/422.
@@ -146,3 +153,5 @@ Jedna funkcja liczy statusy całej ścieżki stałą liczbą zapytań (bez N+1);
 | + wiele ról; ADMIN bez INSTRUCTOR nie ocenia | `test_auth.py` | BR-27 |
 | + rejestracja oczekująca → login 403; zatwierdzenie → login OK | `test_auth.py` | BR-28 |
 | + anulowanie zapisu anuluje otwarte próby | `test_enrollments.py` | BR-29 |
+| + kurs: uczestnik nie tworzy szkicu (409 TASK_IS_COURSE); instruktor wpisuje wynik; PASSED ostateczne; NEEDS_IMPROVEMENT wymaga komentarza | `test_courses.py` | BR-30 |
+| + kurs nie blokuje prac własnych w etapie; etap 2 zablokowany do zaliczenia całego etapu 1 (z kursami) | `test_tasks.py` | BR-02, BR-31 |

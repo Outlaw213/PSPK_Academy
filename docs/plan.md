@@ -19,7 +19,8 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 ## M0a — Makieta WWW (wyjątek od §36, decyzja Q-30) ← JESTEŚMY TUTAJ
 - [ ] `web/`: Vite + React + TS + Tailwind, tokeny designu (Apple HIG, jasny/ciemny, kolory PSPK — Q-51)
 - [ ] Ekrany uczestnika, instruktora i admina na danych przykładowych (bez backendu, bez logiki biznesowej)
-- [ ] Publikacja podglądu do akceptacji PO
+- [x] Publikacja podglądu do akceptacji PO (v1)
+- [ ] v2: kolory i logo PSPK (Q-55), program z listy (Q-36), kursy (Q-56, Q-57)
 **DoD:** PO akceptuje kierunek designu.
 
 ## M1 — Szkielet i infrastruktura (STEP 2–5)
@@ -51,7 +52,7 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 ## M5 — Zapisy i statusy zadań (STEP 10, 12)
 - [ ] Admin: zapisy (utworzenie, lista, anulowanie); uczestnik: `/me/paths`, szczegóły, `/progress`, `/tasks/{id}` z widoczną rewizją
 - [ ] `compute_task_statuses`, `get_previous_task`, `is_task_available`
-- [ ] Testy jednostkowe statusów + TEST 1, TEST 2, przejście między etapami, zapis nieaktywny (Q-39)
+- [ ] Testy jednostkowe statusów + TEST 1, TEST 2, przejście między etapami, zapis nieaktywny (Q-39), kursy poza kolejnością i bramka etapu (BR-02, BR-31)
 **DoD:** kryteria §29 „Enrollment”.
 
 ## M6 — Zgłoszenia: szkic, zdjęcia, wysyłka, historia (STEP 11)
@@ -66,6 +67,7 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 
 ## M8 — Ocena i ostateczne zaliczenie (STEP 14)
 - [ ] Assessment, przejścia stanów, automatyczne COMPLETED zapisu, zgłoszenie oceniane wg swojej rewizji
+- [ ] Wyniki kursów przez instruktora (BR-30, FR-INS-06, `test_courses.py`)
 - [ ] TEST 3, TEST 4, TEST 6, BR-07, BR-13, BR-15, `test_structure.py` (część ze zgłoszeniami), `test_enrollments.py` (BR-29)
 **DoD:** kryteria §29 „Final pass”.
 
@@ -82,7 +84,7 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 **DoD:** kryteria §29 „Audit”.
 
 ## M11 — Domknięcie MVP backendu (STEP 17–18)
-- [ ] Seed (`python -m app.seed`): admin, instruktor, uczestnik, osoba z kilkoma rolami, „Podstawy kowalstwa” wg Q-36 (zadania z kart)
+- [ ] Seed (`python -m app.seed`): admin, instruktor, uczestnik, osoba z kilkoma rolami, „Podstawy kowalstwa” wg Q-36 (lista `docs/assets/lista-zadan-sciezki.jpeg`, karty z `docs/assets/`)
 - [ ] README (§33), zgodność `/openapi.json` z `api.md`
 - [ ] Pełna regresja, przejście checklisty §29 punkt po punkcie
 **DoD:** wszystkie kryteria §29 odhaczone na podstawie prawdziwych wyników testów.

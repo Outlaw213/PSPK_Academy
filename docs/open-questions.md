@@ -6,8 +6,9 @@
 
 | ID | Pytanie | Blokuje |
 |---|---|---|
-| Q-51 | Logo i kolory PSPK (kolor główny, ewentualnie dodatkowe; plik logo w SVG/PNG). Do czasu odpowiedzi makieta używa koloru tymczasowego (token `--accent`). | finalny design (nie blokuje backendu) |
-| Q-36 | Pełny program nauczania „Podstawy kowalstwa” (etapy, zadania z kart). | seed M11 |
+| Q-36a | Treść kart dla pozostałych zadań (dostarczone: Haczyk / zawieszka, Serce). Kursy: czy mają karty i jakie kryteria zaliczenia. | seed M11 |
+| Q-58 | Pisownia nazw z listy zadań — w makiecie poprawione: „Zestaw sztućców” (było „Zesta wsztućcy”), „Zgrzewanie kowalskie” („kolwaskie”), „Hidden Tang” („Hiden”), „Gwóźdź” („Gwóźdz”). Do potwierdzenia. | seed M11 |
+| Q-59 | Logo w wektorze (SVG) — obecny PNG 465 px wystarcza na ekran, do druku i dużych rozmiarów lepszy wektor. | nie blokuje |
 | Q-46 | Kopie zapasowe: gdzie i jak często (baza + dysk zdjęć). | M11a |
 | Q-47 | DNS `pspk.pl` w Cloudflare. | M11a |
 | Q-48 | Kto ma dostęp do stagingu (Cloudflare Access — lista e-maili). | M11a |
@@ -53,4 +54,8 @@
 | Q-43 | Zdjęcia wzorcowe są częścią rewizji zadania. | 2026-10-03 |
 | Q-44 | Wyłączone zadania i puste etapy nie są pokazywane uczestnikowi. | 2026-10-03 |
 | Q-45 | Ponowny zapis do tej samej wersji reaktywuje anulowany zapis. | 2026-10-03 |
-| Q-54 | **Design: styl Apple (HIG), kolory PSPK** (do czasu Q-51 — kolor tymczasowy). | 2026-10-26 |
+| Q-54 | **Design: styl Apple (HIG), kolory PSPK.** | 2026-10-26 |
+| Q-51 / Q-55 | **Kolory i logo:** strona pspk.pl niedostępna ze środowiska pracy, kolory przyjęte z kart zadań PSPK: granat `#263944` (przyciski, linki), brąz `#A77A35` (wyróżnienia), tło `#F6F6F4`; logo `docs/assets/logo-pspk.png`. W trybie ciemnym akcent jasny brąz `#D4A862`. | 2026-10-26 |
+| Q-36 | **Program „Podstawy kowalstwa”** wg `docs/assets/lista-zadan-sciezki.jpeg`: Etap 1 „Kowalstwo podstawowe” — 15 prac własnych (2 tyg.) + 4 kursy; Etap 2 „Kowalstwo zaawansowane” — 9 prac własnych (4 tyg.) + 5 kursów. Wzór karty: `docs/assets/karta-*.png`. | 2026-10-26 |
+| Q-56 | **Typ zadania „Kurs” (`COURSE`):** zajęcia stacjonarne 1–2 dni. Uczestnik nic nie wysyła; instruktor z uprawnieniem wpisuje wynik (zaliczony / do powtórki z komentarzem), opcjonalnie ze zdjęciami (BR-30). | 2026-10-26 |
+| Q-57 | **Kolejność z kursami:** kursy poza kolejnością w etapie; prace własne po kolei; etap N+1 odblokowany po zaliczeniu wszystkich zadań (z kursami) etapów wcześniejszych (BR-02, BR-31). | 2026-10-26 |
