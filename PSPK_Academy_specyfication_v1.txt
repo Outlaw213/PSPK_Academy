@@ -1,0 +1,1732 @@
+# PSPK AKADEMIA — PROMPT IMPLEMENTACYJNY
+
+## ROLA
+
+Jesteś głównym developerem projektu **PSPK Akademia**.
+
+Masz zaprojektować i zaimplementować aplikację zgodnie z poniższą specyfikacją.
+
+Nie upraszczaj wymagań biznesowych bez uzgodnienia. Nie zmieniaj kluczowych reguł procesu. Jeżeli podczas implementacji znajdziesz sprzeczność lub brak techniczny, zatrzymaj się, wskaż problem i zaproponuj rozwiązanie zamiast samodzielnie zmieniać wymaganie.
+
+Projekt ma być przygotowany jako rzeczywista aplikacja produkcyjna, ale rozwijana etapami.
+
+## NAJWAŻNIEJSZA ZASADA
+
+Nie próbuj implementować całego systemu w jednym kroku.
+
+Pracuj iteracyjnie:
+
+1. przygotuj strukturę projektu,
+2. backend,
+3. bazę danych,
+4. modele,
+5. migracje,
+6. authentication,
+7. API,
+8. testy,
+9. dopiero później frontend WWW i Android.
+
+Po każdym większym etapie uruchom testy i sprawdź, czy poprzednia funkcjonalność nadal działa.
+
+---
+
+# 1. CEL SYSTEMU
+
+PSPK Akademia jest systemem edukacyjnym Polskiego Stowarzyszenia Pasjonatów Kowalstwa.
+
+System ma umożliwiać prowadzenie uporządkowanych ścieżek edukacyjnych związanych z kowalstwem.
+
+Podstawowy proces:
+
+UCZESTNIK
+→ otrzymuje ścieżkę
+→ widzi całą ścieżkę
+→ wykonuje dostępne zadanie
+→ przesyła zgłoszenie
+→ instruktor ocenia
+→ zadanie zostaje zaliczone albo skierowane do poprawy
+→ uczestnik może wykonać kolejną próbę
+→ po zaliczeniu zadania odblokowuje się następne zadanie.
+
+Kluczowe jest rozdzielenie:
+
+* zadania,
+* prób wykonania zadania,
+* zgłoszenia,
+* oceny,
+* historii.
+
+---
+
+# 2. KLUCZOWE REGUŁY BIZNESOWE
+
+Te reguły są nadrzędne.
+
+## R1 — cała ścieżka jest widoczna
+
+Uczestnik widzi wszystkie etapy i zadania przypisanej mu ścieżki.
+
+Niektóre zadania mogą mieć status:
+
+* COMPLETED
+* AVAILABLE
+* IN_PROGRESS
+* SUBMITTED
+* UNDER_REVIEW
+* NEEDS_IMPROVEMENT
+* LOCKED
+
+Zadanie LOCKED jest widoczne, ale nie może zostać rozpoczęte.
+
+---
+
+## R2 — kolejność zadań
+
+Uczestnik nie może wykonać kolejnego zadania, dopóki poprzednie zadanie nie zostało zaliczone.
+
+Przykład:
+
+Task 1 = PASSED
+Task 2 = AVAILABLE
+Task 3 = LOCKED
+
+Po zaliczeniu Task 2:
+
+Task 3 = AVAILABLE
+
+Źródłem prawdy jest backend.
+
+Frontend nie może samodzielnie decydować o odblokowaniu zadania.
+
+---
+
+## R3 — brak limitu prób
+
+Uczestnik ma nieograniczoną liczbę prób.
+
+Nie implementuj:
+
+MAX_ATTEMPTS.
+
+Przykład:
+
+Attempt 1 → NEEDS_IMPROVEMENT
+Attempt 2 → NEEDS_IMPROVEMENT
+Attempt 3 → NEEDS_IMPROVEMENT
+...
+Attempt 100 → NEEDS_IMPROVEMENT
+Attempt 101 → może zostać utworzona.
+
+---
+
+## R4 — każda próba jest zachowywana
+
+Nigdy nie nadpisuj poprzedniej próby.
+
+Każde zgłoszenie musi mieć:
+
+* własne ID,
+* numer próby,
+* datę utworzenia,
+* autora,
+* zdjęcia,
+* komentarz,
+* status,
+* instruktora,
+* ocenę.
+
+Historia musi pozostać dostępna.
+
+---
+
+## R5 — zaliczenie jest ostateczne
+
+Jeżeli instruktor zaliczy zadanie:
+
+Task = PASSED
+
+jest to ostateczne zaliczenie tego zadania.
+
+Nie można tworzyć kolejnej próby tego samego zadania po jego zaliczeniu.
+
+---
+
+## R6 — instruktor
+
+Zgłoszenie trafia do grupy instruktorów posiadających uprawnienia do odpowiedniej ścieżki/etapu.
+
+Pierwszy instruktor, który podejmie zgłoszenie, zostaje jego oceniającym.
+
+Po przejęciu zgłoszenia inni instruktorzy nie mogą równolegle oceniać tego samego zgłoszenia.
+
+Operacja claim musi być atomowa i zabezpieczona przed race condition.
+
+---
+
+## R7 — ocena
+
+Instruktor może:
+
+* zaliczyć,
+* skierować do poprawy.
+
+Jeżeli wybiera NEEDS_IMPROVEMENT, komentarz jest wymagany.
+
+Jeżeli wybiera PASSED, zaliczenie jest ostateczne.
+
+---
+
+## R8 — maksymalnie 10 zdjęć
+
+Jedno zgłoszenie może zawierać maksymalnie 10 zdjęć.
+
+Próba wysłania 11 lub większej liczby zdjęć musi zostać odrzucona przez backend.
+
+---
+
+## R9 — kompresja zdjęć
+
+Zdjęcia powinny być kompresowane przed wysłaniem.
+
+W Androidzie kompresja powinna odbywać się przede wszystkim po stronie urządzenia.
+
+Backend również musi walidować:
+
+* MIME type,
+* rozmiar,
+* liczbę plików.
+
+---
+
+## R10 — AI nie zalicza zadania
+
+AI może pomagać w tworzeniu opisu lub analizie materiału, ale nie może samodzielnie podjąć decyzji o zaliczeniu zadania.
+
+Decyzję o zaliczeniu podejmuje instruktor.
+
+---
+
+## R11 — backend jest źródłem prawdy
+
+Backend kontroluje:
+
+* role,
+* dostęp,
+* przypisanie do ścieżki,
+* dostępność zadania,
+* możliwość utworzenia próby,
+* możliwość oceny,
+* możliwość przejęcia zgłoszenia.
+
+Nigdy nie ufaj frontendowi.
+
+---
+
+# 3. ROLE
+
+## PARTICIPANT
+
+Może:
+
+* przeglądać własne ścieżki,
+* przeglądać etapy,
+* przeglądać zadania,
+* wykonywać dostępne zadania,
+* tworzyć zgłoszenia,
+* przesyłać zdjęcia,
+* przeglądać historię prób,
+* przeglądać oceny.
+
+Nie może:
+
+* zaliczać samodzielnie,
+* oceniać,
+* zmieniać treści zadań,
+* omijać kolejności.
+
+---
+
+## INSTRUCTOR
+
+Może:
+
+* przeglądać zgłoszenia dotyczące uprawnionych ścieżek/etapów,
+* przejmować zgłoszenia,
+* przeglądać zdjęcia,
+* przeglądać historię prób,
+* oceniać zgłoszenia.
+
+---
+
+## ADMIN
+
+Może:
+
+* zarządzać użytkownikami,
+* zarządzać rolami,
+* tworzyć ścieżki,
+* tworzyć etapy,
+* tworzyć zadania,
+* ustalać kolejność,
+* przypisywać instruktorów,
+* przypisywać uczestników,
+* zarządzać materiałami,
+* tworzyć wersje ścieżek,
+* przeglądać historię.
+
+---
+
+# 4. STRUKTURA EDUKACYJNA
+
+Hierarchia:
+
+LearningPath
+↓
+Stage
+↓
+Task
+↓
+Submission / Attempt
+↓
+Assessment
+
+Przykład:
+
+Podstawy kowalstwa
+├── Etap 1 — Bezpieczeństwo
+│   ├── Zadanie 1
+│   ├── Zadanie 2
+│   └── Zadanie 3
+├── Etap 2 — Narzędzia
+│   ├── Zadanie 4
+│   └── Zadanie 5
+└── Etap 3 — Podstawowe operacje
+├── Zadanie 6
+├── Zadanie 7
+└── Zadanie 8
+
+---
+
+# 5. WERSJONOWANIE ŚCIEŻEK
+
+Ścieżka musi być wersjonowana.
+
+Nie wolno zmienić historii uczestnika przez edycję aktualnego zadania.
+
+Model:
+
+LearningPath
+↓
+PathVersion
+↓
+Stage
+↓
+Task
+
+Uczestnik jest przypisany do konkretnej wersji ścieżki.
+
+Przykład:
+
+LearningPath:
+"Podstawy kowalstwa"
+
+Versions:
+
+v1
+v2
+v3
+
+Jeżeli uczestnik realizuje v1, jego historia pozostaje związana z v1 nawet po utworzeniu v2.
+
+---
+
+# 6. MODEL SQLALCHEMY
+
+Użyj:
+
+* Python
+* FastAPI
+* SQLAlchemy 2.x
+* PostgreSQL
+* Alembic
+* Pydantic v2
+
+Preferuj SQLAlchemy 2.0 style.
+
+## User
+
+Pola:
+
+id
+email
+password_hash
+first_name
+last_name
+role
+is_active
+created_at
+updated_at
+
+Role jako enum:
+
+USER
+INSTRUCTOR
+ADMIN
+
+Można zastosować osobną tabelę roles, jeżeli uzasadnienie architektoniczne jest lepsze, ale dla MVP enum jest wystarczający.
+
+---
+
+## LearningPath
+
+Pola:
+
+id
+name
+description
+is_active
+created_at
+updated_at
+
+Relacje:
+
+versions
+
+---
+
+## PathVersion
+
+Pola:
+
+id
+learning_path_id
+version_number
+description
+is_active
+created_at
+
+Unique:
+
+learning_path_id + version_number
+
+Relacje:
+
+learning_path
+stages
+enrollments
+
+---
+
+## Stage
+
+Pola:
+
+id
+path_version_id
+name
+description
+position
+created_at
+updated_at
+
+Unique:
+
+path_version_id + position
+
+Relacje:
+
+path_version
+tasks
+instructors
+
+---
+
+## Task
+
+Pola:
+
+id
+stage_id
+name
+description
+instructions
+task_type
+position
+estimated_minutes
+difficulty
+is_active
+created_at
+updated_at
+
+TaskType:
+
+PRACTICAL
+THEORY
+QUIZ
+
+Unique:
+
+stage_id + position
+
+Relacje:
+
+stage
+submissions
+
+---
+
+## Enrollment
+
+Tabela łącząca uczestnika ze ścieżką.
+
+Pola:
+
+id
+user_id
+path_version_id
+status
+enrolled_at
+completed_at
+
+Status:
+
+ACTIVE
+COMPLETED
+CANCELLED
+
+Unique:
+
+user_id + path_version_id
+
+---
+
+## InstructorPathPermission
+
+Tabela:
+
+id
+instructor_id
+path_version_id
+
+Unique:
+
+instructor_id + path_version_id
+
+---
+
+## InstructorStagePermission
+
+Tabela:
+
+id
+instructor_id
+stage_id
+
+Unique:
+
+instructor_id + stage_id
+
+Można pozostawić tę tabelę jako opcjonalną, ale architektura powinna umożliwiać ograniczenie uprawnień instruktora do konkretnego etapu.
+
+---
+
+## Submission
+
+To najważniejsza tabela procesu oceniania.
+
+Pola:
+
+id
+task_id
+user_id
+attempt_number
+status
+instructor_id
+submitted_at
+claimed_at
+assessed_at
+created_at
+updated_at
+
+Status:
+
+DRAFT
+SUBMITTED
+UNDER_REVIEW
+NEEDS_IMPROVEMENT
+PASSED
+CANCELLED
+
+Unique:
+
+task_id + user_id + attempt_number
+
+---
+
+## SubmissionComment / Assessment
+
+Preferuj osobny model oceny.
+
+Assessment:
+
+id
+submission_id
+instructor_id
+result
+comment
+created_at
+
+Result:
+
+PASSED
+NEEDS_IMPROVEMENT
+
+Jedno finalne Assessment dla jednej Submission.
+
+---
+
+## SubmissionPhoto
+
+Pola:
+
+id
+submission_id
+storage_key
+original_filename
+mime_type
+file_size
+width
+height
+position
+created_at
+
+Maksymalnie 10 rekordów dla jednego submission.
+
+---
+
+## AuditLog
+
+Pola:
+
+id
+user_id
+action
+entity_type
+entity_id
+metadata
+created_at
+
+Action powinien być enumem lub kontrolowanym stringiem.
+
+Przykładowe wartości:
+
+USER_LOGIN
+PATH_ASSIGNED
+SUBMISSION_CREATED
+SUBMISSION_CLAIMED
+SUBMISSION_ASSESSED
+TASK_PASSED
+TASK_REJECTED
+PATH_VERSION_CREATED
+TASK_UPDATED
+
+---
+
+# 7. STATUSY
+
+## Task — status obliczany dla uczestnika
+
+Nie musisz koniecznie przechowywać go jako kolumny Task.
+
+Status powinien być wyliczany na podstawie:
+
+* Enrollment,
+* kolejności,
+* Submission,
+* Assessment.
+
+Możliwe statusy API:
+
+LOCKED
+AVAILABLE
+IN_PROGRESS
+SUBMITTED
+UNDER_REVIEW
+NEEDS_IMPROVEMENT
+PASSED
+
+---
+
+## Submission
+
+DRAFT
+SUBMITTED
+UNDER_REVIEW
+NEEDS_IMPROVEMENT
+PASSED
+CANCELLED
+
+Przepływ:
+
+DRAFT
+→ SUBMITTED
+→ UNDER_REVIEW
+→ PASSED
+
+lub:
+
+DRAFT
+→ SUBMITTED
+→ UNDER_REVIEW
+→ NEEDS_IMPROVEMENT
+→ nowa Submission
+
+---
+
+# 8. LOGIKA DOSTĘPNOŚCI ZADANIA
+
+Utwórz jedną centralną funkcję serwisową:
+
+is_task_available(
+user_id,
+task_id
+)
+
+Logika:
+
+1. Użytkownik musi posiadać aktywne Enrollment.
+2. Task musi należeć do tej ścieżki.
+3. Jeżeli jest pierwszym zadaniem ścieżki → AVAILABLE.
+4. Jeżeli nie jest pierwszym:
+
+   * znajdź poprzednie zadanie,
+   * znajdź ostatni stan jego realizacji,
+   * jeżeli poprzednie zadanie = PASSED → AVAILABLE,
+   * w przeciwnym przypadku → LOCKED.
+
+Jeżeli aktualne zadanie ma aktywną próbę:
+
+* SUBMITTED → SUBMITTED
+* UNDER_REVIEW → UNDER_REVIEW
+* NEEDS_IMPROVEMENT → użytkownik może utworzyć nową próbę
+* PASSED → PASSED
+
+Po PASSED:
+
+create submission musi zwrócić błąd.
+
+---
+
+# 9. KOLEJNOŚĆ ZADAŃ
+
+Kolejność wynika z:
+
+Stage.position
+
+oraz:
+
+Task.position
+
+Utwórz helper/service:
+
+get_previous_task(task_id)
+
+Musi poprawnie obsługiwać przejście między etapami.
+
+Przykład:
+
+Stage 1:
+Task 1
+Task 2
+
+Stage 2:
+Task 3
+
+Dla Task 3 poprzednim zadaniem jest Task 2.
+
+Nie zakładaj, że poprzednie zadanie znajduje się zawsze w tym samym Stage.
+
+---
+
+# 10. TWORZENIE SUBMISSION
+
+Endpoint:
+
+POST /api/v1/tasks/{task_id}/submissions
+
+Backend:
+
+1. sprawdza użytkownika,
+2. sprawdza Enrollment,
+3. sprawdza dostępność Task,
+4. sprawdza czy Task nie jest PASSED,
+5. wylicza kolejny attempt_number,
+6. tworzy Submission,
+7. zapisuje zdjęcia,
+8. zapisuje AuditLog.
+
+Attempt_number:
+
+max(existing attempts) + 1
+
+Jeżeli brak prób:
+
+1
+
+Nie używaj globalnego licznika.
+
+---
+
+# 11. CLAIM SUBMISSION
+
+Endpoint:
+
+POST /api/v1/submissions/{submission_id}/claim
+
+Operacja musi być atomowa.
+
+Backend:
+
+1. sprawdza rolę INSTRUCTOR,
+2. sprawdza uprawnienia do Task/Stage/PathVersion,
+3. sprawdza czy instructor_id jest NULL,
+4. przypisuje instruktora,
+5. ustawia claimed_at,
+6. zmienia status na UNDER_REVIEW,
+7. zapisuje AuditLog.
+
+Jeżeli dwóch instruktorów wykona claim równocześnie, tylko jeden może zostać przypisany.
+
+Użyj odpowiedniego mechanizmu transakcyjnego/row locking.
+
+---
+
+# 12. OCENA
+
+Endpoint:
+
+POST /api/v1/submissions/{submission_id}/assessment
+
+Request:
+
+result
+comment
+
+Jeżeli:
+
+result = PASSED
+
+comment może być opcjonalny.
+
+Jeżeli:
+
+result = NEEDS_IMPROVEMENT
+
+comment jest wymagany.
+
+Backend:
+
+1. sprawdza czy instruktor jest przypisany,
+2. sprawdza uprawnienia,
+3. sprawdza aktualny status,
+4. tworzy Assessment,
+5. zmienia Submission.status,
+6. zapisuje AuditLog.
+
+Jeżeli PASSED:
+
+* Submission = PASSED
+* Task staje się PASSED dla tego uczestnika
+* kolejny Task zostaje AVAILABLE.
+
+Jeżeli NEEDS_IMPROVEMENT:
+
+* Submission = NEEDS_IMPROVEMENT
+* uczestnik może utworzyć kolejną próbę.
+
+---
+
+# 13. OSTATECZNE ZALICZENIE
+
+Po:
+
+Submission → PASSED
+
+nie wolno:
+
+* tworzyć kolejnego submission,
+* zmieniać wyniku,
+* ponownie otwierać zadania.
+
+Jeżeli administrator musi dokonać korekty administracyjnej, musi istnieć osobna funkcja administracyjna i AuditLog.
+
+Nie implementuj jej w MVP, chyba że będzie potrzebna do testów.
+
+---
+
+# 14. ZDJĘCIA
+
+Endpoint może przyjmować multipart/form-data.
+
+Maksimum:
+
+10 plików.
+
+Walidacja:
+
+* image/jpeg
+* image/png
+* image/webp
+
+Maksymalny rozmiar pliku powinien być konfigurowalny przez ENV.
+
+Przykład:
+
+MAX_UPLOAD_SIZE_MB=10
+
+Zdjęcia przechowuj w MinIO.
+
+Nie przechowuj binariów w PostgreSQL.
+
+---
+
+# 15. STORAGE
+
+Docker Compose:
+
+postgres
+minio
+backend
+
+MinIO bucket:
+
+pspk-academy
+
+Przykładowy storage key:
+
+submissions/{submission_id}/{uuid}.jpg
+
+Backend przechowuje tylko metadata + storage_key.
+
+---
+
+# 16. API
+
+Prefix:
+
+/api/v1
+
+## Authentication
+
+POST /auth/register
+POST /auth/login
+POST /auth/refresh
+GET /auth/me
+
+---
+
+## Participant
+
+GET /me
+
+GET /me/paths
+
+GET /me/paths/{path_version_id}
+
+GET /me/paths/{path_version_id}/progress
+
+GET /tasks/{task_id}
+
+GET /tasks/{task_id}/submissions
+
+POST /tasks/{task_id}/submissions
+
+GET /submissions/{submission_id}
+
+---
+
+## Instructor
+
+GET /instructor/submissions
+
+GET /instructor/submissions/{submission_id}
+
+POST /submissions/{submission_id}/claim
+
+POST /submissions/{submission_id}/assessment
+
+---
+
+## Admin
+
+GET /admin/users
+
+POST /admin/users
+
+PUT /admin/users/{user_id}
+
+GET /admin/paths
+
+POST /admin/paths
+
+POST /admin/paths/{path_id}/versions
+
+GET /admin/path-versions/{version_id}
+
+POST /admin/stages
+
+PUT /admin/stages/{stage_id}
+
+POST /admin/tasks
+
+PUT /admin/tasks/{task_id}
+
+POST /admin/enrollments
+
+POST /admin/instructor-permissions
+
+---
+
+# 17. RESPONSE — PATH PROGRESS
+
+Endpoint:
+
+GET /me/paths/{path_version_id}/progress
+
+powinien zwrócić strukturę podobną do:
+
+{
+"path": {
+"id": "...",
+"name": "Podstawy kowalstwa",
+"version": 1
+},
+"progress": {
+"completed": 4,
+"total": 15
+},
+"stages": [
+{
+"id": "...",
+"name": "Podstawy",
+"position": 1,
+"tasks": [
+{
+"id": "...",
+"name": "Bezpieczeństwo",
+"position": 1,
+"status": "PASSED"
+},
+{
+"id": "...",
+"name": "Rozpalanie paleniska",
+"position": 2,
+"status": "AVAILABLE"
+}
+]
+}
+]
+}
+
+Status jest wyliczany przez backend.
+
+---
+
+# 18. STRUKTURA KATALOGÓW
+
+Zaproponuj następującą strukturę:
+
+pspk-akademia/
+
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   │
+│   │   ├── models/
+│   │   │   ├── user.py
+│   │   │   ├── learning_path.py
+│   │   │   ├── path_version.py
+│   │   │   ├── stage.py
+│   │   │   ├── task.py
+│   │   │   ├── enrollment.py
+│   │   │   ├── submission.py
+│   │   │   ├── assessment.py
+│   │   │   ├── submission_photo.py
+│   │   │   ├── permissions.py
+│   │   │   └── audit_log.py
+│   │   │
+│   │   ├── schemas/
+│   │   │   ├── auth.py
+│   │   │   ├── user.py
+│   │   │   ├── path.py
+│   │   │   ├── stage.py
+│   │   │   ├── task.py
+│   │   │   ├── submission.py
+│   │   │   └── assessment.py
+│   │   │
+│   │   ├── api/
+│   │   │   └── v1/
+│   │   │       ├── auth.py
+│   │   │       ├── participant.py
+│   │   │       ├── instructor.py
+│   │   │       └── admin.py
+│   │   │
+│   │   ├── services/
+│   │   │   ├── auth_service.py
+│   │   │   ├── path_service.py
+│   │   │   ├── task_service.py
+│   │   │   ├── submission_service.py
+│   │   │   ├── assessment_service.py
+│   │   │   ├── permission_service.py
+│   │   │   └── storage_service.py
+│   │   │
+│   │   ├── dependencies/
+│   │   │   ├── auth.py
+│   │   │   └── permissions.py
+│   │   │
+│   │   └── utils/
+│   │       ├── security.py
+│   │       └── images.py
+│   │
+│   ├── alembic/
+│   ├── tests/
+│   │   ├── test_auth.py
+│   │   ├── test_paths.py
+│   │   ├── test_tasks.py
+│   │   ├── test_submissions.py
+│   │   ├── test_claim.py
+│   │   └── test_assessment.py
+│   │
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── alembic.ini
+│
+├── web/
+│   └── ...
+│
+├── android/
+│   └── ...
+│
+├── docker-compose.yml
+├── .env.example
+├── .gitignore
+├── README.md
+└── docs/
+├── architecture.md
+├── api.md
+├── business-rules.md
+└── database.md
+
+Nie musisz tworzyć web/ i android/ w pierwszym etapie, ale główna struktura repozytorium powinna na nie przewidywać miejsce.
+
+---
+
+# 19. KONFIGURACJA ENV
+
+Przygotuj:
+
+.env.example
+
+Przykładowo:
+
+DATABASE_URL=postgresql+asyncpg://pspk:pspk@postgres:5432/pspk_academy
+
+JWT_SECRET_KEY=CHANGE_ME
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+JWT_REFRESH_TOKEN_EXPIRE_DAYS=30
+
+MINIO_ENDPOINT=minio:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=CHANGE_ME
+MINIO_BUCKET=pspk-academy
+MINIO_SECURE=false
+
+MAX_UPLOAD_SIZE_MB=10
+MAX_SUBMISSION_PHOTOS=10
+
+Nie commituj rzeczywistych sekretów.
+
+---
+
+# 20. DOCKER COMPOSE
+
+Przygotuj działający docker-compose.yml zawierający przynajmniej:
+
+postgres
+minio
+backend
+
+Backend powinien startować dopiero po dostępności PostgreSQL.
+
+Dodaj healthchecki.
+
+Dane PostgreSQL i MinIO powinny znajdować się w persistent volumes.
+
+---
+
+# 21. MIGRACJE
+
+Użyj Alembic.
+
+Pierwsza migracja ma utworzyć:
+
+* users,
+* learning_paths,
+* path_versions,
+* stages,
+* tasks,
+* enrollments,
+* instructor_path_permissions,
+* instructor_stage_permissions,
+* submissions,
+* assessments,
+* submission_photos,
+* audit_logs.
+
+Nie twórz tabel przez Base.metadata.create_all() w produkcyjnym uruchomieniu.
+
+---
+
+# 22. AUTHENTICATION
+
+Użyj:
+
+JWT access token
+JWT refresh token
+
+Hasła:
+
+* nigdy plaintext,
+* użyj bezpiecznego hashowania,
+* preferuj Argon2 albo bcrypt.
+
+Endpoint /auth/me powinien zwracać podstawowe informacje użytkownika.
+
+---
+
+# 23. AUTORYZACJA
+
+Stwórz dependencies:
+
+require_authenticated_user
+require_role
+require_admin
+require_instructor
+require_participant
+
+Ale samo sprawdzenie roli nie wystarczy.
+
+Instruktor musi mieć również uprawnienie do konkretnej ścieżki/etapu.
+
+---
+
+# 24. TRANSAKCJE
+
+Operacje biznesowe muszą być transakcyjne.
+
+Szczególnie:
+
+* claim submission,
+* assessment,
+* tworzenie kolejnej próby,
+* PASSED.
+
+Nie dopuszczaj do stanu:
+
+Submission.status = PASSED
+
+bez odpowiedniego Assessment.
+
+---
+
+# 25. RACE CONDITIONS
+
+Szczególnie przetestuj:
+
+dwóch instruktorów jednocześnie wykonujących:
+
+POST /submissions/{id}/claim
+
+Tylko jeden może wygrać.
+
+Drugiemu API powinno zwrócić odpowiedź typu:
+
+409 Conflict
+
+---
+
+# 26. HTTP STATUS CODES
+
+Stosuj poprawne kody.
+
+Przykładowo:
+
+200 OK
+201 Created
+204 No Content
+400 Bad Request
+401 Unauthorized
+403 Forbidden
+404 Not Found
+409 Conflict
+422 Unprocessable Entity
+
+---
+
+# 27. BŁĘDY BIZNESOWE
+
+Zdefiniuj czytelne błędy.
+
+Przykłady:
+
+TASK_LOCKED
+TASK_ALREADY_PASSED
+NO_ACTIVE_ENROLLMENT
+SUBMISSION_ALREADY_CLAIMED
+INSTRUCTOR_NOT_AUTHORIZED
+TOO_MANY_PHOTOS
+INVALID_PHOTO_TYPE
+ASSESSMENT_COMMENT_REQUIRED
+
+---
+
+# 28. TESTY MVP
+
+Muszą istnieć automatyczne testy.
+
+## TEST 1 — pierwsze zadanie
+
+Nowy uczestnik otrzymuje ścieżkę.
+
+Pierwsze zadanie:
+
+AVAILABLE
+
+---
+
+## TEST 2 — kolejne zadanie zablokowane
+
+Task 1:
+
+AVAILABLE
+
+Task 2:
+
+LOCKED
+
+---
+
+## TEST 3 — zaliczenie
+
+Task 1:
+
+PASSED
+
+Task 2:
+
+AVAILABLE
+
+---
+
+## TEST 4 — niezaliczenie
+
+Task 1:
+
+NEEDS_IMPROVEMENT
+
+Task 2:
+
+LOCKED
+
+---
+
+## TEST 5 — unlimited attempts
+
+Utwórz np. 20 prób.
+
+Wszystkie muszą być zapisane.
+
+Następna próba musi być możliwa.
+
+---
+
+## TEST 6 — final pass
+
+Po PASSED:
+
+próba 21 nie może zostać utworzona.
+
+---
+
+## TEST 7 — historia
+
+Po 5 próbach wszystkie 5 rekordów musi istnieć.
+
+---
+
+## TEST 8 — 10 zdjęć
+
+10 zdjęć:
+
+SUCCESS
+
+---
+
+## TEST 9 — 11 zdjęć
+
+11 zdjęć:
+
+REJECTED
+
+---
+
+## TEST 10 — claim
+
+Instruktor A przejmuje zgłoszenie.
+
+Instruktor B nie może go przejąć.
+
+---
+
+## TEST 11 — unauthorized instructor
+
+Instruktor bez uprawnienia nie może przejąć zgłoszenia.
+
+---
+
+## TEST 12 — API bypass
+
+Użytkownik próbuje bezpośrednio utworzyć Submission dla zablokowanego zadania.
+
+Backend musi zwrócić:
+
+403 lub 409
+
+i nie może utworzyć rekordu.
+
+---
+
+## TEST 13 — path version
+
+Uczestnik jest zapisany do v1.
+
+Administrator tworzy v2.
+
+Historia uczestnika nadal wskazuje v1.
+
+---
+
+# 29. CRITERIA ACCEPTANCE MVP
+
+MVP uznajemy za ukończone dopiero wtedy, gdy:
+
+### Authentication
+
+* [ ] rejestracja działa,
+* [ ] logowanie działa,
+* [ ] JWT działa,
+* [ ] role działają.
+
+### Learning paths
+
+* [ ] można utworzyć ścieżkę,
+* [ ] można utworzyć wersję,
+* [ ] można utworzyć etap,
+* [ ] można utworzyć zadanie,
+* [ ] można ustawić kolejność.
+
+### Enrollment
+
+* [ ] admin może przypisać uczestnika do ścieżki,
+* [ ] uczestnik widzi swoją ścieżkę.
+
+### Task locking
+
+* [ ] cała ścieżka jest widoczna,
+* [ ] pierwsze zadanie jest dostępne,
+* [ ] kolejne są zablokowane,
+* [ ] zaliczenie odblokowuje następne.
+
+### Submissions
+
+* [ ] uczestnik może wysłać zgłoszenie,
+* [ ] można dodać maksymalnie 10 zdjęć,
+* [ ] można tworzyć nieograniczoną liczbę prób,
+* [ ] każda próba pozostaje w historii.
+
+### Instructor
+
+* [ ] instruktor widzi właściwe zgłoszenia,
+* [ ] może przejąć zgłoszenie,
+* [ ] tylko pierwszy instruktor może je przejąć,
+* [ ] może zaliczyć,
+* [ ] może skierować do poprawy.
+
+### Final pass
+
+* [ ] PASSED jest ostateczne,
+* [ ] nie można utworzyć kolejnej próby po PASSED,
+* [ ] następne zadanie zostaje odblokowane.
+
+### Security
+
+* [ ] frontend nie może ominąć blokad,
+* [ ] backend sprawdza uprawnienia,
+* [ ] instruktor nie może oceniać nieuprawnionej ścieżki,
+* [ ] użytkownik nie może modyfikować cudzych danych.
+
+### Audit
+
+* [ ] kluczowe operacje są zapisywane.
+
+### Tests
+
+* [ ] wszystkie testy automatyczne przechodzą.
+
+---
+
+# 30. API DOCUMENTATION
+
+FastAPI powinno automatycznie generować:
+
+/docs
+
+/openapi.json
+
+Dokumentacja API musi być aktualna względem implementacji.
+
+---
+
+# 31. SEED DATA
+
+Przygotuj skrypt developerski tworzący:
+
+ADMIN
+INSTRUCTOR
+PARTICIPANT
+
+oraz przykładową ścieżkę:
+
+"Podstawy kowalstwa"
+
+3 etapy:
+
+Etap 1 — Bezpieczeństwo
+Etap 2 — Narzędzia
+Etap 3 — Podstawowe operacje
+
+Każdy etap powinien mieć kilka przykładowych zadań.
+
+Seed data jest wyłącznie do developmentu i testów.
+
+Nie używaj rzeczywistych danych osobowych.
+
+---
+
+# 32. LOGOWANIE I OBSŁUGA BŁĘDÓW
+
+Dodaj sensowne logowanie backendu.
+
+Nie loguj:
+
+* haseł,
+* tokenów,
+* sekretów.
+
+Błędy API powinny mieć jednolity format.
+
+Przykład:
+
+{
+"error": {
+"code": "TASK_LOCKED",
+"message": "Task is locked until the previous task is passed."
+}
+}
+
+---
+
+# 33. README
+
+README musi zawierać:
+
+* wymagania,
+* instalację,
+* uruchomienie Docker Compose,
+* migracje,
+* seed,
+* uruchomienie testów,
+* Swagger,
+* zmienne środowiskowe,
+* strukturę projektu.
+
+Przykładowy workflow:
+
+docker compose up -d
+
+alembic upgrade head
+
+python -m app.seed
+
+pytest
+
+---
+
+# 34. ZASADY IMPLEMENTACJI
+
+1. Nie duplikuj logiki biznesowej.
+2. Nie implementuj reguł blokowania osobno dla Androida i [WWW](http://WWW).
+3. Backend jest źródłem prawdy.
+4. Stosuj type hints.
+5. Stosuj Pydantic schemas.
+6. Stosuj dependency injection FastAPI.
+7. Stosuj async SQLAlchemy tam, gdzie ma to sens.
+8. Oddziel API, services i models.
+9. Dodaj testy do każdej kluczowej reguły biznesowej.
+10. Nie umieszczaj sekretów w repozytorium.
+11. Nie twórz niepotrzebnej komplikacji architektonicznej.
+12. Preferuj prostą, czytelną implementację.
+13. Nie dodawaj funkcji, których nie wymaga MVP, tylko dlatego że mogą być przydatne.
+14. Przy zmianach schematu zawsze używaj Alembic.
+15. Nie usuwaj danych historycznych.
+
+---
+
+# 35. KOLEJNOŚĆ REALIZACJI TERAZ
+
+Rozpocznij od:
+
+## STEP 1
+
+Przeanalizuj wymagania i przygotuj krótkie podsumowanie architektury.
+
+## STEP 2
+
+Utwórz strukturę katalogów.
+
+## STEP 3
+
+Utwórz Docker Compose.
+
+## STEP 4
+
+Skonfiguruj PostgreSQL.
+
+## STEP 5
+
+Skonfiguruj FastAPI.
+
+## STEP 6
+
+Utwórz modele SQLAlchemy.
+
+## STEP 7
+
+Utwórz pierwszą migrację Alembic.
+
+## STEP 8
+
+Zaimplementuj authentication.
+
+## STEP 9
+
+Zaimplementuj LearningPath / PathVersion / Stage / Task.
+
+## STEP 10
+
+Zaimplementuj Enrollment.
+
+## STEP 11
+
+Zaimplementuj Submission i historię prób.
+
+## STEP 12
+
+Zaimplementuj logikę:
+
+is_task_available()
+
+## STEP 13
+
+Zaimplementuj claim instruktora.
+
+## STEP 14
+
+Zaimplementuj Assessment.
+
+## STEP 15
+
+Zaimplementuj MinIO i zdjęcia.
+
+## STEP 16
+
+Zaimplementuj AuditLog.
+
+## STEP 17
+
+Napisz testy.
+
+## STEP 18
+
+Uruchom cały zestaw testów.
+
+## STEP 19
+
+Dopiero po przejściu testów przygotuj podstawowy frontend.
+
+---
+
+# 36. WAŻNE — NIE IMPLEMENTUJ JESZCZE WSZYSTKIEGO
+
+Na pierwszym etapie skup się wyłącznie na:
+
+BACKEND + DATABASE + API + TESTS.
+
+Nie buduj jeszcze pełnego Androida.
+
+Nie buduj jeszcze pełnego panelu [WWW](http://WWW).
+
+Najpierw doprowadź backend MVP do stanu, w którym wszystkie testy biznesowe przechodzą.
+
+---
+
+# 37. SPOSÓB PRACY Z KODEM
+
+Po każdym etapie:
+
+1. pokaż listę zmienionych/utworzonych plików,
+2. wyjaśnij krótko co zostało wykonane,
+3. uruchom testy,
+4. pokaż wynik,
+5. wskaż problemy,
+6. dopiero wtedy przejdź dalej.
+
+Nie generuj fikcyjnego wyniku testów.
+
+Jeżeli test nie został uruchomiony, napisz:
+
+"TEST NIEURUCHOMIONY"
+
+Jeżeli coś nie działa, nie ukrywaj tego.
+
+---
+
+# 38. PIERWSZE ZADANIE DLA CIEBIE
+
+Zacznij teraz od STEP 1.
+
+Nie generuj jeszcze całej aplikacji.
+
+Najpierw:
+
+1. przeanalizuj wymagania,
+2. przedstaw proponowaną architekturę,
+3. przedstaw strukturę repozytorium,
+4. wskaż ewentualne konflikty lub braki w specyfikacji,
+5. zaproponuj kolejność implementacji.
+
+Po zatwierdzeniu przejdziemy do tworzenia kodu.
+
+# KONIEC SPECYFIKACJI
