@@ -5,9 +5,11 @@ import { StoreContext, type Draft, type Route, type Store } from "./store";
 import { Button, Group, Row, Segmented, Sheet, Toast, cx } from "./components/ui";
 import { roleLabel } from "./lib/status";
 import { AuthScreen, Logo } from "./screens/auth";
+import { QuizScreen } from "./screens/quiz";
 import { DraftScreen, HistoryScreen, PathScreen, PathsScreen, SubmissionScreen, TaskScreen } from "./screens/participant";
 import { AssessedScreen, CourseScreen, CoursesScreen, QueueScreen, ReviewScreen } from "./screens/instructor";
-import { AdminPathsScreen, AuditScreen, EnrollmentsScreen, PermissionsScreen, TaskEditScreen, UsersScreen, VersionScreen } from "./screens/admin";
+import { AdminPathsScreen, AuditScreen, EnrollmentsScreen, PermissionsScreen, UsersScreen } from "./screens/admin";
+import { TaskEditScreen, VersionScreen } from "./screens/builder";
 
 interface Tab {
   id: string;
@@ -39,6 +41,8 @@ function render(r: Route) {
       return <AssessedScreen />;
     case "review":
       return <ReviewScreen id={r.id} />;
+    case "quiz":
+      return <QuizScreen taskId={r.taskId} preview={r.preview} />;
     case "courses":
       return <CoursesScreen />;
     case "course":

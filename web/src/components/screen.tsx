@@ -38,7 +38,7 @@ export function Screen({
     <div className="flex min-h-full flex-col">
       <div
         className={cx(
-          "sticky top-[env(safe-area-inset-top,0px)] z-20 flex h-[52px] items-center gap-2 px-[max(8px,env(safe-area-inset-left,0px))] transition-colors",
+          "sticky top-[env(safe-area-inset-top,0px)] z-20 grid h-[52px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-[max(8px,env(safe-area-inset-left,0px))] transition-colors",
           collapsed ? "glass border-x-0 border-t-0" : "border-b border-transparent",
         )}
       >
@@ -47,20 +47,24 @@ export function Screen({
             <button
               type="button"
               onClick={onBack}
-              className="focus-ring -ml-1 flex min-h-11 items-center gap-0.5 rounded-ctl pr-2 text-body text-accent"
+              className="focus-ring -ml-1 flex min-h-11 min-w-0 items-center gap-0.5 rounded-ctl pr-2 text-body text-accent"
             >
               <ChevronLeft size={26} strokeWidth={2.2} aria-hidden />
-              <span className="max-w-[9rem] truncate">{back ?? "Wstecz"}</span>
+              <span className="truncate">{back ?? "Wstecz"}</span>
             </button>
           )}
         </div>
         <div
           aria-hidden={!collapsed}
-          className={cx("min-w-0 max-w-[50%] truncate text-headline transition-opacity", collapsed ? "opacity-100" : "opacity-0")}
+          className={cx(
+            "pointer-events-none max-w-[38vw] truncate text-headline transition-opacity lg:max-w-md",
+            collapsed ? "opacity-100" : "opacity-0",
+            !!actions && "max-sm:invisible",
+          )}
         >
           {title}
         </div>
-        <div className="flex flex-1 items-center justify-end gap-1 pr-12 lg:pr-0">{actions}</div>
+        <div className="flex min-w-0 items-center justify-end gap-1 pr-12 lg:pr-0">{actions}</div>
       </div>
 
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-[max(16px,env(safe-area-inset-left,0px))] pb-32 pt-1 lg:px-8 lg:pb-16">

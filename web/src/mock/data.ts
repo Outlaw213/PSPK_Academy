@@ -54,6 +54,31 @@ export interface Task {
   requirements?: string;
   reference?: { photo: Photo; caption: string }[];
   referenceNote?: string;
+  /** Markdown body (Q-62). */
+  content?: string;
+  attachments?: Attachment[];
+  quiz?: Quiz;
+}
+
+export interface Attachment {
+  id: string;
+  kind: "PDF" | "VIDEO_LINK";
+  title: string;
+  url?: string;
+  size?: string;
+}
+
+export interface QuizQuestion {
+  id: string;
+  text: string;
+  kind: "SINGLE" | "MULTI";
+  options: { id: string; text: string; correct: boolean }[];
+}
+
+/** Auto-graded against the admin's key (BR-32). The key never reaches the participant in the real API. */
+export interface Quiz {
+  threshold: number;
+  questions: QuizQuestion[];
 }
 
 export interface Stage {
@@ -101,19 +126,110 @@ const img = (id: string, url: string): Photo => ({ id, tone: 0, motif: "hook", u
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-let practicalNo = 0;
-let courseNo = 0;
-const t = (stage: number, pos: number, type: "P" | "K", name: string, days: number, status: TaskStatus = "LOCKED", extra: Partial<Task> = {}): Task => ({
-  id: `t${stage}-${pos}`,
-  position: pos,
+const counters = { P: 0, K: 0, T: 0, Q: 0 };
+const kinds = {
+  P: { type: "PRACTICAL", code: "PRACA WŁASNA" },
+  K: { type: "COURSE", code: "KURS" },
+  T: { type: "THEORY", code: "TEORIA" },
+  Q: { type: "QUIZ", code: "QUIZ" },
+} as const;
+// `n` keeps ids stable while the admin reorders; position is set from the array order below.
+const t = (stage: number, n: number | string, type: keyof typeof kinds, name: string, days: number, status: TaskStatus = "LOCKED", extra: Partial<Task> = {}): Task => ({
+  id: `t${stage}-${n}`,
+  position: 0,
   name,
-  code: type === "P" ? `PRACA WŁASNA ${pad(++practicalNo)}` : `KURS ${pad(++courseNo)}`,
-  type: type === "P" ? "PRACTICAL" : "COURSE",
+  code: `${kinds[type].code} ${pad(++counters[type])}`,
+  type: kinds[type].type,
   status,
   revision: 1,
   expectedDays: days,
   ...extra,
 });
+const ordered = (tasks: Task[]) => tasks.map((x, i) => ({ ...x, position: i + 1 }));
+
+const theory: Partial<Task> = {
+  content: `Kuźnia to miejsce pracy z ogniem, rozgrzanym metalem i ciężkimi narzędziami. Zanim zaczniesz kuć, poznaj zasady, które obowiązują na każdym stanowisku PSPK.
+
+## Najczęstsze zagrożenia
+- **oparzenia** — od materiału, narzędzi i zgorzeliny,
+- **urazy oczu** — odpryski zgorzeliny i opiłki,
+- **urazy dłoni i nadgarstków** — źle trzymany młotek, odbicie od kowadła,
+- **zatrucie tlenkiem węgla** — przy słabej wentylacji paleniska.
+
+## Zasady
+1. Zawsze okulary ochronne i pełne skórzane obuwie.
+2. Ubranie z włókien naturalnych, bez luźnych elementów.
+3. Gorącego materiału nie dotyka się dłonią — także w rękawicy. Używaj kleszczy.
+4. Woda i gaśnica w zasięgu ręki, zanim rozpalisz palenisko.`,
+  assignment: "Opisz własnymi słowami pięć zagrożeń w kuźni i sposób, w jaki się przed nimi chronisz na swoim stanowisku.",
+  requirements: "Odpowiedź w komentarzu albo zdjęcie odręcznej notatki.",
+  attachments: [
+    { id: "a1", kind: "PDF", title: "Regulamin kuźni PSPK", size: "1,2 MB" },
+    { id: "a2", kind: "VIDEO_LINK", title: "Bezpieczne rozpalanie paleniska (film)", url: "https://www.youtube.com/results?search_query=kowalstwo+bezpiecze%C5%84stwo" },
+  ],
+};
+
+const quiz: Partial<Task> = {
+  content: "Krótki test z wiadomości o stali i pracy w kuźni. Wynik zobaczysz od razu po wysłaniu odpowiedzi.",
+  quiz: {
+    threshold: 80,
+    questions: [
+      {
+        id: "q1",
+        kind: "SINGLE",
+        text: "Jaki kolor żaru odpowiada właściwej temperaturze kucia stali niskowęglowej?",
+        options: [
+          { id: "q1a", text: "Ciemnoczerwony", correct: false },
+          { id: "q1b", text: "Wiśniowy", correct: false },
+          { id: "q1c", text: "Żółto-pomarańczowy", correct: true },
+          { id: "q1d", text: "Biały, iskrzący", correct: false },
+        ],
+      },
+      {
+        id: "q2",
+        kind: "SINGLE",
+        text: "Dlaczego nie kuje się stali, która ostygła poniżej koloru wiśniowego?",
+        options: [
+          { id: "q2a", text: "Rośnie ryzyko pęknięć i zakładek", correct: true },
+          { id: "q2b", text: "Stal zaczyna się topić", correct: false },
+          { id: "q2c", text: "Młotek się odbija i niszczy kowadło", correct: false },
+        ],
+      },
+      {
+        id: "q3",
+        kind: "MULTI",
+        text: "Które oznaczenia to stale niskowęglowe? Zaznacz wszystkie poprawne.",
+        options: [
+          { id: "q3a", text: "S235", correct: true },
+          { id: "q3b", text: "C45", correct: false },
+          { id: "q3c", text: "St3S", correct: true },
+          { id: "q3d", text: "NC6", correct: false },
+        ],
+      },
+      {
+        id: "q4",
+        kind: "SINGLE",
+        text: "Co oznaczają białe iskry wylatujące z materiału w palenisku?",
+        options: [
+          { id: "q4a", text: "Materiał jest gotowy do kucia", correct: false },
+          { id: "q4b", text: "Stal się przepala i jest niszczona", correct: true },
+          { id: "q4c", text: "Palenisko ma za mało powietrza", correct: false },
+        ],
+      },
+      {
+        id: "q5",
+        kind: "MULTI",
+        text: "Które środki ochrony są obowiązkowe przy kuciu? Zaznacz wszystkie poprawne.",
+        options: [
+          { id: "q5a", text: "Okulary ochronne", correct: true },
+          { id: "q5b", text: "Pełne skórzane obuwie", correct: true },
+          { id: "q5c", text: "Rękawice do chwytania gorącego materiału dłonią", correct: false },
+          { id: "q5d", text: "Ubranie z włókien naturalnych", correct: true },
+        ],
+      },
+    ],
+  },
+};
 
 const haczyk: Partial<Task> = {
   revision: 3,
@@ -181,9 +297,11 @@ export const stages: Stage[] = [
     id: "s1",
     position: 1,
     name: "Kowalstwo podstawowe",
-    tasks: [
+    tasks: ordered([
+      t(1, "teoria", "T", "Bezpieczeństwo pracy w kuźni", 7, "PASSED", theory),
       t(1, 1, "P", "Gwóźdź", W2, "PASSED"),
       t(1, 2, "P", "Haczyk / zawieszka", W2, "NEEDS_IMPROVEMENT", haczyk),
+      t(1, "quiz", "Q", "Stal i ogień — test wiedzy", 7, "LOCKED", quiz),
       t(1, 3, "P", "Serce [dwa sposoby]", W2, "LOCKED", serce),
       t(1, 4, "P", "Rybi ogon", W2),
       t(1, 5, "P", "Liść", W2),
@@ -201,13 +319,13 @@ export const stages: Stage[] = [
       t(1, 17, "K", "Głowa byka", 1, "AVAILABLE", course),
       t(1, 18, "K", "Głowa barana", 1, "AVAILABLE", course),
       t(1, 19, "K", "Zestaw sztućców", 2, "AVAILABLE", course),
-    ],
+    ]),
   },
   {
     id: "s2",
     position: 2,
     name: "Kowalstwo zaawansowane",
-    tasks: [
+    tasks: ordered([
       t(2, 1, "P", "Kleszcze kowalskie", W4),
       t(2, 2, "P", "Nóż typu Full Tang [Clip Point]", W4),
       t(2, 3, "P", "Nóż typu Hidden Tang [Drop Point]", W4),
@@ -222,7 +340,7 @@ export const stages: Stage[] = [
       t(2, 12, "K", "San-Mai", 1, "LOCKED", course),
       t(2, 13, "K", "Damast warstwowy", 1, "LOCKED", course),
       t(2, 14, "K", "Damast puszkowy", 1, "LOCKED", course),
-    ],
+    ]),
   },
 ];
 
@@ -286,6 +404,22 @@ export const myHistory: Submission[] = [
     revision: 1,
     stageName: "Kowalstwo podstawowe",
     assessment: { result: "PASSED", comment: "Udział w kursie, podkowa wykonana poprawnie.", instructor: "Anna Wiśniewska", at: "2026-10-10 16:00" },
+  },
+  {
+    id: "sub-3",
+    taskId: "t1-teoria",
+    taskName: "Bezpieczeństwo pracy w kuźni",
+    taskCode: "TEORIA 01",
+    participant: "Jan Kowalski",
+    attempt: 1,
+    status: "PASSED",
+    comment: "Oparzenia, odpryski do oczu, urazy dłoni, tlenek węgla, pożar. Okulary, skórzane buty, bawełniane ubranie, kleszcze zamiast rąk, woda i gaśnica obok paleniska.",
+    photos: [p("th1", 40, "fire")],
+    submittedAt: "2026-09-28 19:30",
+    instructor: "Marek Nowak",
+    revision: 1,
+    stageName: "Kowalstwo podstawowe",
+    assessment: { result: "PASSED", comment: "Komplet. Pamiętaj o wentylacji przy węglu.", instructor: "Marek Nowak", at: "2026-09-29 08:15" },
   },
   {
     id: "sub-5",
@@ -399,12 +533,12 @@ export const users: AdminUser[] = [
 ];
 
 export const enrollments = [
-  { id: "e1", user: "Jan Kowalski", path: "Podstawy kowalstwa", version: 1, status: "ACTIVE", progress: [2, 33], at: "2026-09-02" },
-  { id: "e2", user: "Piotr Zieliński", path: "Podstawy kowalstwa", version: 1, status: "ACTIVE", progress: [5, 33], at: "2026-09-10" },
-  { id: "e3", user: "Katarzyna Wójcik", path: "Podstawy kowalstwa", version: 1, status: "ACTIVE", progress: [3, 33], at: "2026-09-12" },
-  { id: "e4", user: "Tomasz Lewandowski", path: "Podstawy kowalstwa", version: 1, status: "ACTIVE", progress: [7, 33], at: "2026-09-12" },
-  { id: "e5", user: "Robert Krawczyk", path: "Podstawy kowalstwa", version: 1, status: "CANCELLED", progress: [1, 33], at: "2026-09-15" },
-  { id: "e6", user: "Magdalena Kamińska", path: "Podstawy kowalstwa", version: 1, status: "ACTIVE", progress: [2, 33], at: "2026-10-01" },
+  { id: "e1", user: "Jan Kowalski", path: "Podstawy kowalstwa", version: 1, status: "ACTIVE", progress: [3, 35], at: "2026-09-02" },
+  { id: "e2", user: "Piotr Zieliński", path: "Podstawy kowalstwa", version: 1, status: "ACTIVE", progress: [5, 35], at: "2026-09-10" },
+  { id: "e3", user: "Katarzyna Wójcik", path: "Podstawy kowalstwa", version: 1, status: "ACTIVE", progress: [3, 35], at: "2026-09-12" },
+  { id: "e4", user: "Tomasz Lewandowski", path: "Podstawy kowalstwa", version: 1, status: "ACTIVE", progress: [7, 35], at: "2026-09-12" },
+  { id: "e5", user: "Robert Krawczyk", path: "Podstawy kowalstwa", version: 1, status: "CANCELLED", progress: [1, 35], at: "2026-09-15" },
+  { id: "e6", user: "Magdalena Kamińska", path: "Podstawy kowalstwa", version: 1, status: "ACTIVE", progress: [3, 35], at: "2026-10-01" },
 ] as const;
 
 export const permissions = [

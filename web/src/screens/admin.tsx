@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { ArrowDown, ArrowUp, Check, Copy, EyeOff, Plus, Search, UserPlus, X } from "lucide-react";
+import { Check, Plus, Search, UserPlus, X } from "lucide-react";
 import { Screen } from "../components/screen";
-import { Badge, Button, Field, Group, inputClass, PhotoTile, ProgressBar, Row, Segmented, Sheet, StatusDot, cx } from "../components/ui";
-import { allTasks, useStore } from "../store";
-import { audit, enrollments, permissions, type AdminUser, type Role, type Stage } from "../mock/data";
-import { roleLabel, taskTypeLabel, userStatus } from "../lib/status";
+import { Badge, Button, Field, Group, inputClass, ProgressBar, Row, Sheet, StatusDot, cx } from "../components/ui";
+import { useStore } from "../store";
+import { audit, enrollments, permissions, type AdminUser, type Role } from "../mock/data";
+import { roleLabel, userStatus } from "../lib/status";
 
 const ROLES: Role[] = ["PARTICIPANT", "INSTRUCTOR", "ADMIN"];
 
@@ -124,195 +124,13 @@ export function AdminPathsScreen() {
       <Group title="Podstawy kowalstwa" footer="Uczestnik zostaje przy wersji, do której go zapisano. Nowa wersja nie zmienia jego historii.">
         <Row onClick={() => push({ name: "version" })} trailing={<Badge tone="ok">Przyjmuje zapisy</Badge>}>
           <div className="text-body">Wersja 1</div>
-          <div className="text-footnote text-fg-2">2 etapy · 24 prace własne · 9 kursów · 5 zapisów</div>
+          <div className="text-footnote text-fg-2">2 etapy · 35 zadań · 6 zapisów</div>
         </Row>
         <Row chevron={false} trailing={<Badge tone="muted">Szkic</Badge>}>
           <div className="text-body text-fg-2">Wersja 2</div>
           <div className="text-footnote text-fg-3">kopia wersji 1 · nie przyjmuje zapisów</div>
         </Row>
       </Group>
-    </Screen>
-  );
-}
-
-export function VersionScreen() {
-  const { stages, setStages, push, pop, toast } = useStore();
-  const [accepting, setAccepting] = useState(true);
-  const [off, setOff] = useState<string[]>([]);
-
-  const move = (stageId: string, idx: number, dir: -1 | 1) =>
-    setStages((ss: Stage[]) =>
-      ss.map((s) => {
-        if (s.id !== stageId) return s;
-        const t = [...s.tasks];
-        const j = idx + dir;
-        if (j < 0 || j >= t.length) return s;
-        [t[idx], t[j]] = [t[j], t[idx]];
-        return { ...s, tasks: t.map((x, i) => ({ ...x, position: i + 1 })) };
-      }),
-    );
-
-  return (
-    <Screen
-      title="Podstawy kowalstwa · v1"
-      back="Ścieżki"
-      onBack={pop}
-      subtitle="Edycja treści tworzy nową wersję zadania. Zaliczenia nigdy nie są cofane."
-      actions={<Button variant="plain" icon={Copy} onClick={() => toast("Utworzono wersję 2 (kopia)")}>Kopia</Button>}
-    >
-      <Group>
-        <Row
-          chevron={false}
-          onClick={() => setAccepting(!accepting)}
-          trailing={
-            <span role="switch" aria-checked={accepting} className={cx("relative h-[31px] w-[51px] shrink-0 rounded-full transition", accepting ? "bg-ok" : "bg-fg/15")}>
-              <span className={cx("absolute top-[2px] size-[27px] rounded-full bg-white shadow transition-all", accepting ? "left-[22px]" : "left-[2px]")} />
-            </span>
-          }
-        >
-          <div className="text-body">Przyjmuje nowe zapisy</div>
-          <div className="text-footnote text-fg-2">Wyłączenie nie wpływa na osoby już zapisane</div>
-        </Row>
-      </Group>
-
-      {stages.map((s) => (
-        <Group key={s.id} title={`Etap ${s.position} · ${s.name}`}>
-          {s.tasks.map((t, i) => {
-            const disabled = off.includes(t.id);
-            return (
-              <Row
-                key={t.id}
-                chevron={false}
-                trailing={
-                  <div className="flex shrink-0 items-center">
-                    <Button variant="plain" className="w-11 px-0" aria-label={`Przesuń ${t.name} wyżej`} icon={ArrowUp} disabled={i === 0} onClick={() => move(s.id, i, -1)} />
-                    <Button variant="plain" className="w-11 px-0" aria-label={`Przesuń ${t.name} niżej`} icon={ArrowDown} disabled={i === s.tasks.length - 1} onClick={() => move(s.id, i, 1)} />
-                    <Button
-                      variant="plain"
-                      className="w-11 px-0"
-                      aria-label={disabled ? `Włącz ${t.name}` : `Wyłącz ${t.name}`}
-                      icon={EyeOff}
-                      onClick={() => setOff(disabled ? off.filter((x) => x !== t.id) : [...off, t.id])}
-                    />
-                  </div>
-                }
-              >
-                <button type="button" onClick={() => push({ name: "task-edit", taskId: t.id })} className="focus-ring -my-3 block w-full rounded-ctl py-3 text-left">
-                  <div className={cx("text-body", disabled && "text-fg-3 line-through")}>
-                    {t.position}. {t.name}
-                  </div>
-                  <div className="text-footnote text-fg-2">
-                    {t.code} · {taskTypeLabel[t.type]} · wersja treści {t.revision}
-                    {disabled && " · wyłączone"}
-                  </div>
-                </button>
-              </Row>
-            );
-          })}
-          <Row onClick={() => toast("Dodawanie zadania — w M4")} leading={<Plus size={20} className="text-accent" aria-hidden />} chevron={false}>
-            <span className="text-body text-accent">Dodaj zadanie</span>
-          </Row>
-        </Group>
-      ))}
-    </Screen>
-  );
-}
-
-export function TaskEditScreen({ taskId }: { taskId: string }) {
-  const { stages, setStages, pop, toast } = useStore();
-  const t = allTasks(stages).find((x) => x.id === taskId)!;
-  const [f, setF] = useState({
-    name: t.name,
-    code: t.code,
-    type: t.type,
-    quantity: t.quantity ?? "",
-    material: t.material ?? "",
-    description: t.description ?? "",
-    instructions: (t.instructions ?? []).join("\n"),
-    criteria: t.criteria ?? "",
-    requirements: t.requirements ?? "",
-  });
-  const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
-  const save = () => {
-    setStages((ss) =>
-      ss.map((s) => ({
-        ...s,
-        tasks: s.tasks.map((x) =>
-          x.id === taskId
-            ? { ...x, ...f, quantity: f.quantity || undefined, material: f.material || undefined, instructions: f.instructions.split("\n").filter(Boolean), revision: x.revision + 1 }
-            : x,
-        ),
-      })),
-    );
-    toast(`Zapisano wersję treści ${t.revision + 1}`);
-    pop();
-  };
-  const text = (k: keyof typeof f, label: string, rows = 3, hint?: string) => (
-    <Field label={label} hint={hint}>
-      {(id) => <textarea id={id} rows={rows} value={f[k]} onChange={set(k)} className={inputClass} />}
-    </Field>
-  );
-  const line = (k: keyof typeof f, label: string) => (
-    <Field label={label}>{(id) => <input id={id} value={f[k]} onChange={set(k)} className={inputClass} />}</Field>
-  );
-
-  return (
-    <Screen
-      title="Edycja zadania"
-      back="Wersja 1"
-      onBack={pop}
-      subtitle={`${t.stage.name} · obecnie wersja treści ${t.revision}`}
-      footer={
-        <>
-          <span className="flex-1 text-subhead text-fg-2">Zapis utworzy wersję treści {t.revision + 1}. Wcześniejsze zgłoszenia zachowują swoją.</span>
-          <Button size="lg" onClick={save}>
-            Zapisz
-          </Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-4 rounded-card bg-bg-2 p-5">
-        <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
-          {line("name", "Tytuł")}
-          {line("code", "Oznaczenie na karcie")}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <span className="px-1 text-footnote font-semibold text-fg-2">Typ zadania</span>
-          <Segmented
-            label="Typ zadania"
-            value={f.type}
-            onChange={(v) => setF({ ...f, type: v })}
-            options={[
-              { value: "PRACTICAL", label: "Praca własna" },
-              { value: "COURSE", label: "Kurs" },
-              { value: "THEORY", label: "Teoria" },
-              { value: "QUIZ", label: "Quiz" },
-            ]}
-          />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {line("quantity", "Do wykonania")}
-          {line("material", "Materiał")}
-        </div>
-      </div>
-      <div className="flex flex-col gap-4 rounded-card bg-bg-2 p-5">
-        {text("description", "Cel ćwiczenia")}
-        {text("instructions", "Kolejność operacji", 6, "Każdy krok w osobnej linii")}
-        {text("criteria", "Na co zwrócić uwagę", 4)}
-        {text("requirements", "Materiał do zaliczenia w aplikacji", 2)}
-      </div>
-      {t.reference && (
-        <Group title="Zdjęcia wzorcowe">
-          {t.reference.map((r) => (
-            <Row key={r.photo.id} chevron={false} leading={<PhotoTile photo={r.photo} className="size-14 shrink-0 rounded-[12px]" />}>
-              <span className="text-body">{r.caption}</span>
-            </Row>
-          ))}
-          <Row onClick={() => toast("Dodawanie zdjęć — w M4")} chevron={false} leading={<Plus size={20} className="text-accent" aria-hidden />}>
-            <span className="text-body text-accent">Dodaj zdjęcie wzorcowe</span>
-          </Row>
-        </Group>
-      )}
     </Screen>
   );
 }

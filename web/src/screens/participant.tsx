@@ -1,9 +1,10 @@
 import { useRef, useState, type ReactNode } from "react";
-import { ArrowRight, Camera, ClipboardList, GraduationCap, Hourglass, Info, Lock, MessageSquareText, Package, Ruler, Send, Trash2 } from "lucide-react";
+import { ArrowRight, Camera, ClipboardList, ExternalLink, FileText, GraduationCap, Hourglass, Info, ListChecks, Lock, MessageSquareText, Package, PenLine, PlayCircle, Ruler, Send, Target, Trash2 } from "lucide-react";
+import { Markdown } from "../components/markdown";
 import { Screen } from "../components/screen";
 import { Badge, Button, Group, inputClass, PhotoTile, ProgressBar, Row, StatusBadge, StatusDot, cx } from "../components/ui";
 import { allTasks, useStore } from "../store";
-import type { Stage, Submission, Task } from "../mock/data";
+import type { Attachment, Stage, Submission, Task } from "../mock/data";
 import { durationLabel, durationLong, submissionStatus, taskTypeLabel } from "../lib/status";
 
 const MAX_PHOTOS = 10;
@@ -35,7 +36,7 @@ export function PathsScreen() {
           <div className="flex flex-col gap-1">
             <Eyebrow>Wersja 1 · w trakcie</Eyebrow>
             <h2 className="font-display text-title2">Podstawy kowalstwa</h2>
-            <p className="text-subhead text-fg-2">2 etapy · 24 prace własne · 9 kursów</p>
+            <p className="text-subhead text-fg-2">2 etapy · 24 prace własne · 9 kursów · teoria i quiz</p>
           </div>
           <span className="grid size-14 shrink-0 place-items-center rounded-[16px] bg-brand-soft/14 font-display text-title3 tabular-nums text-brand">
             {Math.round((done / total) * 100)}%
@@ -239,10 +240,16 @@ export function TaskScreen({ taskId }: { taskId: string }) {
         <GraduationCap size={18} className="shrink-0" aria-hidden /> Zaliczenie potwierdza instruktor po zajęciach. Nic nie musisz wysyłać.
       </span>
     );
+  } else if (t.type === "QUIZ" && (t.status === "AVAILABLE" || t.status === "NEEDS_IMPROVEMENT")) {
+    footer = (
+      <Button size="lg" icon={ListChecks} onClick={() => push({ name: "quiz", taskId })} className="flex-1 sm:flex-none">
+        {t.status === "NEEDS_IMPROVEMENT" ? "Rozwiąż ponownie" : "Rozpocznij quiz"}
+      </Button>
+    );
   } else if (t.status === "AVAILABLE" || t.status === "NEEDS_IMPROVEMENT") {
     footer = (
       <Button size="lg" icon={Camera} onClick={start} className="flex-1 sm:flex-none">
-        Rozpocznij próbę {nextAttempt}
+        {t.type === "THEORY" ? `Napisz odpowiedź` : `Rozpocznij próbę ${nextAttempt}`}
       </Button>
     );
   } else if (t.status === "IN_PROGRESS") {
@@ -264,7 +271,8 @@ export function TaskScreen({ taskId }: { taskId: string }) {
     );
   }
 
-  const hasCard = !!t.description && !isCourse;
+  const hasCard = !!t.description && t.type === "PRACTICAL";
+  const hasContent = !!t.content && (t.type === "THEORY" || t.type === "QUIZ");
 
   return (
     <Screen
@@ -346,7 +354,34 @@ export function TaskScreen({ taskId }: { taskId: string }) {
         </>
       )}
 
-      {!hasCard && !isCourse && (
+      {hasContent && (
+        <section className="flex flex-col gap-2 rounded-card bg-bg-2 p-5">
+          <h3 className="text-footnote font-bold uppercase tracking-[0.06em] text-fg">{t.type === "QUIZ" ? "O teście" : "Materiał"}</h3>
+          <Markdown source={t.content!} />
+        </section>
+      )}
+
+      {t.attachments && t.attachments.length > 0 && <Attachments items={t.attachments} />}
+
+      {t.type === "QUIZ" && t.quiz && (
+        <section className="grid grid-cols-2 gap-3">
+          <Meta icon={ListChecks} label="Pytania" value={`${t.quiz.questions.length} pytań zamkniętych`} />
+          <Meta icon={Target} label="Zaliczenie" value={`od ${t.quiz.threshold}% · wynik od razu`} />
+        </section>
+      )}
+
+      {t.type === "THEORY" && t.assignment && (
+        <section className="flex gap-3 rounded-card border border-dashed border-brand-soft/50 p-5">
+          <PenLine size={20} className="mt-0.5 shrink-0 text-brand" aria-hidden />
+          <div className="flex flex-col gap-1">
+            <h3 className="text-footnote font-bold uppercase tracking-[0.06em]">Polecenie</h3>
+            <p className="max-w-[65ch] text-body text-fg-2">{t.assignment}</p>
+            {t.requirements && <p className="max-w-[65ch] text-footnote text-fg-3">{t.requirements} Odpowiedź ocenia instruktor.</p>}
+          </div>
+        </section>
+      )}
+
+      {!hasCard && !hasContent && !isCourse && (
         <p className="rounded-card border border-dashed hairline p-6 text-center text-subhead text-fg-2">
           Karta tego zadania jest w przygotowaniu. W makiecie pełne karty mają „Haczyk / zawieszka” i „Serce [dwa sposoby]”.
         </p>
@@ -360,6 +395,37 @@ export function TaskScreen({ taskId }: { taskId: string }) {
         </Group>
       )}
     </Screen>
+  );
+}
+
+function Attachments({ items }: { items: Attachment[] }) {
+  const { toast } = useStore();
+  return (
+    <Group title="Materiały">
+      {items.map((a) =>
+        a.kind === "PDF" ? (
+          <Row key={a.id} onClick={() => toast("W aplikacji PDF otworzy się w przeglądarce")} leading={<FileText size={22} className="shrink-0 text-bad" aria-hidden />}>
+            <div className="text-body">{a.title}</div>
+            <div className="text-footnote text-fg-2">PDF · {a.size}</div>
+          </Row>
+        ) : (
+          <a
+            key={a.id}
+            href={a.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="focus-ring flex min-h-11 w-full items-center gap-3 px-4 text-left border-t transition hairline first:border-t-0 hover:bg-fg/[0.03]"
+          >
+            <PlayCircle size={22} className="shrink-0 text-info" aria-hidden />
+            <div className="min-w-0 flex-1 py-3">
+              <div className="text-body">{a.title}</div>
+              <div className="truncate text-footnote text-fg-2">Film · otwiera się w nowej karcie</div>
+            </div>
+            <ExternalLink size={16} className="shrink-0 text-fg-3" aria-hidden />
+          </a>
+        ),
+      )}
+    </Group>
   );
 }
 
