@@ -6,6 +6,11 @@ Role sprawdzane jako przynależność do zbioru ról użytkownika (BR-27).
 
 ## Endpointy
 
+### Serwis (bez prefiksu, publiczne)
+| Metoda | Ścieżka | Wynik | Błędy |
+|---|---|---|---|
+| GET | /health | 200 `{"status": "ok", "database": "ok"}` — sprawdza połączenie z bazą | 503 DATABASE_UNAVAILABLE |
+
 ### Auth (publiczne poza `/me`, `/logout`, `/change-password`)
 | Metoda | Ścieżka | Wynik | Błędy |
 |---|---|---|---|
@@ -116,6 +121,8 @@ Listy są stronicowane (`limit`, `offset`).
 | ATTACHMENT_TOO_LARGE | 413 | > MAX_ATTACHMENT_SIZE_MB |
 | INVALID_ATTACHMENT_TYPE | 422 | plik inny niż PDF (po zawartości) |
 | TASK_IS_COURSE | 409 | uczestnik próbuje utworzyć zgłoszenie dla kursu (BR-30) |
+| DATABASE_UNAVAILABLE | 503 | `/health`: brak połączenia z bazą |
+| INTERNAL_ERROR | 500 | nieobsłużony błąd — bez szczegółów w odpowiedzi (NFR-02) |
 | CONCURRENT_UPDATE | 409 | wykryte zakleszczenie przy równoległych operacjach — klient może ponowić (ADR-10) |
 
 Format: `{"error": {"code": "TASK_LOCKED", "message": "Task is locked until the previous task is passed.", "details": null}}`

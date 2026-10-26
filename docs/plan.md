@@ -16,21 +16,21 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [ ] Pełny program nauczania (Q-36) — nie blokuje do M11
 **DoD:** wszystkie pytania blokujące M1–M3 mają status DECIDED/DEFAULT.
 
-## M0a — Makieta WWW (wyjątek od §36, decyzja Q-30) ← JESTEŚMY TUTAJ
+## M0a — Makieta WWW (wyjątek od §36, decyzja Q-30)
 - [ ] `web/`: Vite + React + TS + Tailwind, tokeny designu (Apple HIG, jasny/ciemny, kolory PSPK — Q-51)
 - [ ] Ekrany uczestnika, instruktora i admina na danych przykładowych (bez backendu, bez logiki biznesowej)
 - [x] Publikacja podglądu do akceptacji PO (v1)
 - [x] v2: kolory i logo PSPK (Q-55), program z listy (Q-36), kursy (Q-56, Q-57)
 - [x] Kierunek designu zaakceptowany przez PO (2026-10-26)
-- [ ] v3: kreator ścieżki (dodawanie zadań i etapów, typy), edytor quizu, teoria z materiałami (Q-60…Q-62)
+- [x] v3: kreator ścieżki (dodawanie zadań i etapów, typy), edytor quizu, teoria z materiałami (Q-60…Q-62)
 **DoD:** PO akceptuje kierunek designu.
 
-## M1 — Szkielet i infrastruktura (STEP 2–5)
-- [ ] Struktura katalogów, `.gitignore`, `.env.example`, `git init`, `CLAUDE.md`
-- [ ] `docker-compose.yml`: postgres, backend, wolumen na zdjęcia (Q-34); healthchecki; wolumeny
-- [ ] `config.py` (pydantic-settings), `database.py` (async engine/sesja), `main.py`, `GET /health`
-- [ ] `errors.py` — jednolity format błędów
-- [ ] pytest + conftest z bazą testową
+## M1 — Szkielet i infrastruktura (STEP 2–5) ← GOTOWE, CZEKA NA AKCEPTACJĘ
+- [x] Struktura katalogów, `.gitignore`, `.env.example`, `CLAUDE.md`
+- [x] `docker-compose.yml`: postgres, backend, wolumen na zdjęcia (Q-34); healthchecki; wolumeny
+- [x] `config.py` (pydantic-settings), `database.py` (async engine/sesja), `main.py`, `GET /health`
+- [x] `errors.py` — jednolity format błędów
+- [x] pytest + conftest z bazą testową
 **DoD:** `docker compose up` startuje usługi, `/health` = 200 (sprawdza DB), `/docs` działa, test dymny zielony.
 
 ## M2 — Modele i migracja 0001 (STEP 6–7)
