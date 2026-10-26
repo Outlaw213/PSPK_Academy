@@ -39,3 +39,47 @@ async def make_client():
 @pytest.fixture
 async def client(make_client) -> AsyncClient:
     return make_client()
+
+
+# --- Database fixtures (M2) -------------------------------------------------
+
+from sqlalchemy import text  # noqa: E402
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine  # noqa: E402
+
+from alembic import command  # noqa: E402
+from alembic.config import Config  # noqa: E402
+
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def alembic_config() -> Config:
+    cfg = Config(os.path.join(BACKEND_DIR, "alembic.ini"))
+    cfg.set_main_option("script_location", os.path.join(BACKEND_DIR, "alembic"))
+    return cfg
+
+
+@pytest.fixture(scope="session")
+def migrated_db() -> None:
+    """Schema comes only from Alembic migrations, never create_all() (NFR-04)."""
+    command.downgrade(alembic_config(), "base")
+    command.upgrade(alembic_config(), "head")
+
+
+@pytest.fixture
+async def db(migrated_db) -> AsyncSession:
+    """A session inside a transaction that is rolled back after the test.
+
+    Statements expected to fail should run inside `session.begin_nested()` so the
+    outer transaction survives the error.
+    """
+    engine = create_async_engine(os.environ["DATABASE_URL"])
+    async with engine.connect() as conn:
+        trans = await conn.begin()
+        session = AsyncSession(bind=conn, join_transaction_mode="create_savepoint", expire_on_commit=False)
+        await session.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
+        try:
+            yield session
+        finally:
+            await session.close()
+            await trans.rollback()
+    await engine.dispose()

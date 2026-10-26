@@ -33,10 +33,11 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] pytest + conftest z bazą testową
 **DoD:** `docker compose up` startuje usługi, `/health` = 200 (sprawdza DB), `/docs` działa, test dymny zielony.
 
-## M2 — Modele i migracja 0001 (STEP 6–7) ← JESTEŚMY TUTAJ
-- [ ] Wszystkie modele z `database.md`, w tym `user_roles`, `task_revisions`, `task_materials`, `task_revision_materials`, `refresh_tokens`
-- [ ] Migracja 0001, indeksy częściowe, checki
-- [ ] Testy ograniczeń DB (unikalności, jedna otwarta próba, jedno PASSED, limit pozycji zdjęć, brak samooceny)
+## M2 — Modele i migracja 0001 (STEP 6–7) ← GOTOWE, CZEKA NA AKCEPTACJĘ
+- [x] Wszystkie modele z `database.md` (21 tabel, w tym quiz, załączniki, kursy — `backend/app/models/`)
+- [x] Migracja 0001, indeksy częściowe, checki, DEFERRABLE, złożony FK zapis↔wersja
+- [x] Testy ograniczeń DB (unikalności, jedna otwarta próba, jedno PASSED, limit pozycji zdjęć, brak samooceny, kursy, quiz, załączniki) + upgrade/downgrade + `alembic check`
+- [x] Backend w Dockerze migruje bazę przy starcie (`alembic upgrade head`)
 **DoD:** `alembic upgrade head` i `downgrade base` przechodzą na czystej bazie.
 
 ## M3 — Uwierzytelnianie i konta (STEP 8)

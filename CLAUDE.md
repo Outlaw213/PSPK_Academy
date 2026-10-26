@@ -23,12 +23,13 @@ System edukacyjny Polskiego Stowarzyszenia Pasjonatów Kowalstwa: ścieżki → 
 
 ## Struktura
 - `web/` — panel WWW (React + TS + Vite + Tailwind). Obecnie makieta na danych przykładowych (`web/src/mock/`).
-- `backend/` — FastAPI: `app/` (config, database, errors, api), `tests/`.
+- `backend/` — FastAPI: `app/` (config, database, errors, api, models), `alembic/` (migracje), `tests/` (`factories.py` — minimalne wiersze do testów bazy).
 - `android/` — później.
 
 ## Komendy
 - Backend lokalnie: `cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt`
 - Testy: baza testowa na porcie 5433 (`docker run -d --name pspk-test-db -e POSTGRES_USER=pspk -e POSTGRES_PASSWORD=pspk -e POSTGRES_DB=pspk_academy_test -p 5433:5432 postgres:18-alpine`), potem `cd backend && .venv/bin/pytest` (inny adres: `TEST_DATABASE_URL`).
+- Migracje: `cd backend && .venv/bin/alembic upgrade head` (URL z `DATABASE_URL`). Nowa migracja: `alembic revision --autogenerate -m ...`, potem przejrzyj ręcznie; `alembic check` musi być czysty (pilnuje tego test).
 - Lint backendu: `.venv/bin/ruff check . && .venv/bin/ruff format --check .`
 - Cały stos: `cp .env.example .env` (uzupełnij hasła), `docker compose up -d --build`, `curl localhost:8000/health`.
 - Za proxy z własnym CA: `docker build --secret id=pip_ca,src=<plik CA> -t pspk-akademia-backend backend`, potem `docker compose up -d --no-build`.

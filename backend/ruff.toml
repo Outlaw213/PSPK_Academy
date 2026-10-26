@@ -3,3 +3,7 @@ target-version = "py313"
 
 [lint]
 select = ["E", "F", "I", "B", "UP", "ARG"]
+
+[lint.per-file-ignores]
+# pytest fixtures are requested by argument name even when the body doesn't use them.
+"tests/*" = ["ARG001"]
