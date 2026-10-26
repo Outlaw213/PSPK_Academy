@@ -1,16 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { Hourglass } from "lucide-react";
 import { Button, Field, inputClass, Segmented } from "../components/ui";
+import logoUrl from "../assets/logo-pspk.png";
 
 export function Logo({ size = 56 }: { size?: number }) {
-  // Placeholder mark until the PSPK logo is provided (Q-51).
+  // Black-on-white PSPK seal: kept on a light disc in both themes instead of being inverted.
   return (
-    <span
-      className="grid shrink-0 place-items-center rounded-[28%] bg-accent font-display font-bold tracking-tight text-accent-fg"
-      style={{ width: size, height: size, fontSize: size * 0.3 }}
-      aria-hidden
-    >
-      PSPK
+    <span className="grid shrink-0 place-items-center rounded-full bg-white shadow-[0_1px_3px_rgb(0_0_0/0.12)] ring-1 ring-black/5" style={{ width: size, height: size }}>
+      <img src={logoUrl} alt="Polskie Stowarzyszenie Pasjonatów Kowalstwa" className="size-[92%]" />
     </span>
   );
 }
@@ -33,7 +30,7 @@ export function AuthScreen({ onLogin }: { onLogin: () => void }) {
     <div className="flex min-h-full items-center justify-center px-[max(16px,env(safe-area-inset-left,0px))] py-10">
       <div className="flex w-full max-w-sm flex-col items-center gap-8">
         <div className="flex flex-col items-center gap-4 text-center">
-          <Logo size={72} />
+          <Logo size={112} />
           <div>
             <h1 className="font-display text-large-title">Akademia</h1>
             <p className="text-subhead text-fg-2">Polskie Stowarzyszenie Pasjonatów Kowalstwa</p>

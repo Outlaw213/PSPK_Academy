@@ -124,17 +124,11 @@ export function AdminPathsScreen() {
       <Group title="Podstawy kowalstwa" footer="Uczestnik zostaje przy wersji, do której go zapisano. Nowa wersja nie zmienia jego historii.">
         <Row onClick={() => push({ name: "version" })} trailing={<Badge tone="ok">Przyjmuje zapisy</Badge>}>
           <div className="text-body">Wersja 1</div>
-          <div className="text-footnote text-fg-2">3 etapy · 8 zadań · 5 zapisów</div>
+          <div className="text-footnote text-fg-2">2 etapy · 24 prace własne · 9 kursów · 5 zapisów</div>
         </Row>
         <Row chevron={false} trailing={<Badge tone="muted">Szkic</Badge>}>
           <div className="text-body text-fg-2">Wersja 2</div>
           <div className="text-footnote text-fg-3">kopia wersji 1 · nie przyjmuje zapisów</div>
-        </Row>
-      </Group>
-      <Group title="Ostrza i noże">
-        <Row chevron={false} trailing={<Badge tone="ok">Przyjmuje zapisy</Badge>}>
-          <div className="text-body">Wersja 1</div>
-          <div className="text-footnote text-fg-2">4 etapy · 12 zadań · 1 zapis</div>
         </Row>
       </Group>
     </Screen>
@@ -233,10 +227,10 @@ export function TaskEditScreen({ taskId }: { taskId: string }) {
     type: t.type,
     quantity: t.quantity ?? "",
     material: t.material ?? "",
-    description: t.description,
-    instructions: t.instructions.join("\n"),
-    criteria: t.criteria.join("\n"),
-    requirements: t.requirements,
+    description: t.description ?? "",
+    instructions: (t.instructions ?? []).join("\n"),
+    criteria: t.criteria ?? "",
+    requirements: t.requirements ?? "",
   });
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
   const save = () => {
@@ -245,7 +239,7 @@ export function TaskEditScreen({ taskId }: { taskId: string }) {
         ...s,
         tasks: s.tasks.map((x) =>
           x.id === taskId
-            ? { ...x, ...f, quantity: f.quantity || undefined, material: f.material || undefined, instructions: f.instructions.split("\n").filter(Boolean), criteria: f.criteria.split("\n").filter(Boolean), revision: x.revision + 1 }
+            ? { ...x, ...f, quantity: f.quantity || undefined, material: f.material || undefined, instructions: f.instructions.split("\n").filter(Boolean), revision: x.revision + 1 }
             : x,
         ),
       })),
@@ -289,7 +283,8 @@ export function TaskEditScreen({ taskId }: { taskId: string }) {
             value={f.type}
             onChange={(v) => setF({ ...f, type: v })}
             options={[
-              { value: "PRACTICAL", label: "Praktyczne" },
+              { value: "PRACTICAL", label: "Praca własna" },
+              { value: "COURSE", label: "Kurs" },
               { value: "THEORY", label: "Teoria" },
               { value: "QUIZ", label: "Quiz" },
             ]}
@@ -303,7 +298,7 @@ export function TaskEditScreen({ taskId }: { taskId: string }) {
       <div className="flex flex-col gap-4 rounded-card bg-bg-2 p-5">
         {text("description", "Cel ćwiczenia")}
         {text("instructions", "Kolejność operacji", 6, "Każdy krok w osobnej linii")}
-        {text("criteria", "Na co zwrócić uwagę", 4, "Każde kryterium w osobnej linii")}
+        {text("criteria", "Na co zwrócić uwagę", 4)}
         {text("requirements", "Materiał do zaliczenia w aplikacji", 2)}
       </div>
       {t.reference && (

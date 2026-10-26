@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Hand, Undo2 } from "lucide-react";
+import { Check, GraduationCap, Hand, Lock, Undo2 } from "lucide-react";
 import { Screen } from "../components/screen";
-import { Badge, Button, Field, Group, inputClass, PhotoTile, Row, Segmented, cx } from "../components/ui";
+import { Badge, Button, Field, Group, inputClass, PhotoTile, Row, Segmented, Sheet, cx } from "../components/ui";
 import { allTasks, useStore } from "../store";
 import { submissionStatus } from "../lib/status";
-import { assessedByMe } from "../mock/data";
+import { assessedByMe, courseRoster, type CourseResult } from "../mock/data";
+import { durationLong } from "../lib/status";
 
 const ME = "Jan Kowalski";
 
@@ -154,12 +155,8 @@ export function ReviewScreen({ id }: { id: string }) {
             <span className="text-subhead font-normal text-accent group-open:hidden">Pokaż</span>
             <span className="hidden text-subhead font-normal text-accent group-open:inline">Ukryj</span>
           </summary>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-body text-fg-2">
-            {task.criteria.map((c) => (
-              <li key={c}>{c}</li>
-            ))}
-          </ul>
-          <p className="mt-3 text-footnote text-fg-3">Wymagany materiał: {task.requirements}</p>
+          <p className="mt-2 max-w-[65ch] text-body text-fg-2">{task.criteria ?? "Karta zadania w przygotowaniu."}</p>
+          {task.requirements && <p className="mt-3 max-w-[65ch] text-footnote text-fg-3">Materiał do zaliczenia: {task.requirements}</p>}
         </details>
       )}
 
@@ -216,6 +213,110 @@ export function ReviewScreen({ id }: { id: string }) {
       {s.status === "UNDER_REVIEW" && !mine && (
         <p className="rounded-card bg-bg-2 p-5 text-body text-fg-2">Ocenia: {s.instructor}. Inni instruktorzy nie mogą równolegle oceniać tego zgłoszenia.</p>
       )}
+    </Screen>
+  );
+}
+
+export function CoursesScreen() {
+  const { stages, push } = useStore();
+  const courses = allTasks(stages).filter((t) => t.type === "COURSE");
+  return (
+    <Screen title="Kursy" subtitle="Po zajęciach wpisz wynik każdemu uczestnikowi. Uczestnik nic nie wysyła.">
+      {stages.map((s) => (
+        <Group key={s.id} title={`Etap ${s.position} · ${s.name}`}>
+          {courses
+            .filter((c) => c.stage.id === s.id)
+            .map((c) => (
+              <Row key={c.id} onClick={() => push({ name: "course", taskId: c.id })} leading={<span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-soft/14 text-brand"><GraduationCap size={18} aria-hidden /></span>}>
+                <div className="text-body">{c.name}</div>
+                <div className="text-footnote text-fg-2">
+                  {c.code} · {durationLong(c.expectedDays)}
+                </div>
+              </Row>
+            ))}
+        </Group>
+      ))}
+    </Screen>
+  );
+}
+
+export function CourseScreen({ taskId }: { taskId: string }) {
+  const { stages, pop, toast } = useStore();
+  const course = allTasks(stages).find((t) => t.id === taskId)!;
+  const [roster, setRoster] = useState(courseRoster);
+  const [edit, setEdit] = useState<(typeof courseRoster)[number] | null>(null);
+  const [result, setResult] = useState<"PASSED" | "NEEDS_IMPROVEMENT">("PASSED");
+  const [comment, setComment] = useState("");
+  const [tried, setTried] = useState(false);
+  const commentMissing = result === "NEEDS_IMPROVEMENT" && comment.trim() === "";
+
+  const open = (r: (typeof courseRoster)[number]) => {
+    setEdit(r);
+    setResult("PASSED");
+    setComment("");
+    setTried(false);
+  };
+  const save = () => {
+    setTried(true);
+    if (!edit || commentMissing) return;
+    setRoster((rs) => rs.map((x) => (x.id === edit.id ? { ...x, result: result as CourseResult } : x)));
+    toast(result === "PASSED" ? `Kurs zaliczony: ${edit.name}` : `Do powtórki: ${edit.name}`);
+    setEdit(null);
+  };
+
+  const label = { PASSED: "Zaliczony", NEEDS_IMPROVEMENT: "Do powtórki" } as const;
+
+  return (
+    <Screen title={course.name} back="Kursy" onBack={pop} subtitle={`${course.code} · Etap ${course.stage.position} · ${durationLong(course.expectedDays)}`}>
+      <Group title="Uczestnicy" footer="Zaliczenie jest ostateczne. Przy „Do powtórki” uczestnik może przyjść na kolejny termin.">
+        {roster.map((r) => (
+          <Row
+            key={r.id}
+            chevron={false}
+            onClick={r.result === "PASSED" || r.locked ? undefined : () => open(r)}
+            trailing={
+              r.locked ? (
+                <Badge tone="muted" icon={Lock}>Etap niedostępny</Badge>
+              ) : r.result ? (
+                <Badge tone={r.result === "PASSED" ? "ok" : "warn"} icon={r.result === "PASSED" ? Check : undefined}>
+                  {label[r.result]}
+                </Badge>
+              ) : (
+                <span className="shrink-0 text-subhead font-semibold text-accent">Wpisz wynik</span>
+              )
+            }
+          >
+            <div className={cx("text-body", r.locked && "text-fg-2")}>{r.name}</div>
+            {r.result === "NEEDS_IMPROVEMENT" && <div className="text-footnote text-fg-2">Można wpisać wynik z kolejnego terminu</div>}
+          </Row>
+        ))}
+      </Group>
+
+      <Sheet open={!!edit} title={edit ? `Wynik: ${edit.name}` : ""} onClose={() => setEdit(null)}>
+        <div className="flex flex-col gap-4">
+          <Segmented
+            label="Wynik kursu"
+            value={result}
+            onChange={setResult}
+            options={[
+              { value: "PASSED", label: "Zaliczony" },
+              { value: "NEEDS_IMPROVEMENT", label: "Do powtórki" },
+            ]}
+          />
+          <Field
+            label={result === "NEEDS_IMPROVEMENT" ? "Komentarz (wymagany)" : "Komentarz (opcjonalny)"}
+            error={tried && commentMissing ? "Napisz, nad czym uczestnik ma popracować." : undefined}
+            hint="Zdjęcia z zajęć możesz dodać po zapisaniu wyniku."
+          >
+            {(fid) => (
+              <textarea id={fid} rows={3} value={comment} aria-invalid={tried && commentMissing} onChange={(e) => setComment(e.target.value)} className={inputClass} />
+            )}
+          </Field>
+          <Button size="lg" onClick={save}>
+            Zapisz wynik
+          </Button>
+        </div>
+      </Sheet>
     </Screen>
   );
 }

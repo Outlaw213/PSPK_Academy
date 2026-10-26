@@ -14,6 +14,8 @@ export default {
         "fg-3": token("fg-3"),
         sep: token("sep"),
         accent: token("accent"),
+        brand: token("brand"),
+        "brand-soft": token("brand-soft"),
         "accent-fg": token("accent-fg"),
         ok: token("ok"),
         warn: token("warn"),

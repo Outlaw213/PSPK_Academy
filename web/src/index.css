@@ -3,61 +3,68 @@
 @tailwind utilities;
 
 /*
- * Design tokens (Apple HIG, Q-54). Values are "R G B" triplets for Tailwind alpha.
- * --accent is TEMPORARY (ember orange) until PSPK brand colours arrive (Q-51):
- * change it here, in all three blocks.
+ * Design tokens (Apple HIG, Q-54) in PSPK colours taken from the task cards (Q-55):
+ * navy #263944 for interactive elements, bronze #A77A35 as the brand highlight.
+ * In dark mode the accent becomes light bronze (navy is unreadable on dark).
+ * Values are "R G B" triplets for Tailwind alpha.
  */
 :root {
-  --bg: 245 244 242;
+  --bg: 246 246 244;
   --bg-2: 255 255 255;
-  --bg-3: 236 234 231;
-  --fg: 28 27 26;
-  --fg-2: 99 96 92;
-  --fg-3: 140 136 131;
-  --sep: 60 55 50;
-  --accent: 194 77 22;
+  --bg-3: 236 236 232;
+  --fg: 31 46 55;
+  --fg-2: 84 97 106;
+  --fg-3: 124 135 142;
+  --sep: 38 57 68;
+  --accent: 38 57 68;
   --accent-fg: 255 255 255;
-  --ok: 30 130 56;
-  --warn: 166 98 0;
-  --bad: 196 38 38;
-  --info: 0 102 204;
-  --glass: 255 255 255;
+  --brand: 140 101 40;
+  --brand-soft: 167 122 53;
+  --ok: 30 125 60;
+  --warn: 160 96 0;
+  --bad: 190 40 40;
+  --info: 31 98 160;
+  --glass: 252 252 250;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: 10 10 9;
-    --bg-2: 28 27 26;
-    --bg-3: 44 42 40;
-    --fg: 245 244 242;
-    --fg-2: 172 168 163;
-    --fg-3: 128 124 119;
-    --sep: 235 230 225;
-    --accent: 255 138 76;
-    --accent-fg: 32 14 4;
-    --ok: 64 205 98;
-    --warn: 255 179 64;
-    --bad: 255 105 97;
-    --info: 100 170 255;
-    --glass: 30 29 28;
+    --bg: 15 23 28;
+    --bg-2: 27 38 45;
+    --bg-3: 40 54 63;
+    --fg: 238 240 240;
+    --fg-2: 168 180 186;
+    --fg-3: 122 136 144;
+    --sep: 220 228 232;
+    --accent: 212 168 98;
+    --accent-fg: 22 26 28;
+    --brand: 212 168 98;
+    --brand-soft: 212 168 98;
+    --ok: 92 200 120;
+    --warn: 240 180 80;
+    --bad: 255 115 105;
+    --info: 120 175 230;
+    --glass: 24 34 41;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: 10 10 9;
-  --bg-2: 28 27 26;
-  --bg-3: 44 42 40;
-  --fg: 245 244 242;
-  --fg-2: 172 168 163;
-  --fg-3: 128 124 119;
-  --sep: 235 230 225;
-  --accent: 255 138 76;
-  --accent-fg: 32 14 4;
-  --ok: 64 205 98;
-  --warn: 255 179 64;
-  --bad: 255 105 97;
-  --info: 100 170 255;
-  --glass: 30 29 28;
+  --bg: 15 23 28;
+  --bg-2: 27 38 45;
+  --bg-3: 40 54 63;
+  --fg: 238 240 240;
+  --fg-2: 168 180 186;
+  --fg-3: 122 136 144;
+  --sep: 220 228 232;
+  --accent: 212 168 98;
+  --accent-fg: 22 26 28;
+  --brand: 212 168 98;
+  --brand-soft: 212 168 98;
+  --ok: 92 200 120;
+  --warn: 240 180 80;
+  --bad: 255 115 105;
+  --info: 120 175 230;
+  --glass: 24 34 41;
   color-scheme: dark;
 }
 

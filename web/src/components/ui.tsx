@@ -6,6 +6,8 @@ import {
   Clock,
   Flame,
   Hammer,
+  Heart,
+  Leaf,
   Lock,
   Pencil,
   RotateCcw,
@@ -26,6 +28,7 @@ const toneClass: Record<Tone, string> = {
   bad: "bg-bad/12 text-bad",
   info: "bg-info/12 text-info",
   accent: "bg-accent/14 text-accent",
+  brand: "bg-brand-soft/14 text-brand",
   muted: "bg-fg/[0.06] text-fg-2",
 };
 
@@ -157,6 +160,8 @@ const motifIcon: Record<Photo["motif"], LucideIcon> = {
   tongs: Wrench,
   fire: Flame,
   anvil: Hammer,
+  heart: Heart,
+  leaf: Leaf,
 };
 
 /** Placeholder for a real submission photo: a heat-coloured steel swatch. */
@@ -262,7 +267,7 @@ export function ProgressBar({ done, total }: { done: number; total: number }) {
       aria-valuenow={done}
       aria-label={`Ukończono ${done} z ${total}`}
     >
-      <div className="h-full rounded-full bg-accent transition-[width]" style={{ width: `${(done / total) * 100}%` }} />
+      <div className="h-full rounded-full bg-brand-soft transition-[width]" style={{ width: `${(done / total) * 100}%` }} />
     </div>
   );
 }

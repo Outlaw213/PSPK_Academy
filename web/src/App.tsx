@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, ClipboardCheck, History, Inbox, KeyRound, LogOut, Moon, Route as RouteIcon, ScrollText, ShieldCheck, Sun, SunMoon, Users, type LucideIcon } from "lucide-react";
+import { BookOpen, ClipboardCheck, GraduationCap, History, Inbox, KeyRound, LogOut, Moon, Route as RouteIcon, ScrollText, ShieldCheck, Sun, SunMoon, Users, type LucideIcon } from "lucide-react";
 import { me, myHistory, queue as queueSeed, stages as stagesSeed, users as usersSeed, type Role } from "./mock/data";
 import { StoreContext, type Draft, type Route, type Store } from "./store";
 import { Button, Group, Row, Segmented, Sheet, Toast, cx } from "./components/ui";
 import { roleLabel } from "./lib/status";
 import { AuthScreen, Logo } from "./screens/auth";
 import { DraftScreen, HistoryScreen, PathScreen, PathsScreen, SubmissionScreen, TaskScreen } from "./screens/participant";
-import { AssessedScreen, QueueScreen, ReviewScreen } from "./screens/instructor";
+import { AssessedScreen, CourseScreen, CoursesScreen, QueueScreen, ReviewScreen } from "./screens/instructor";
 import { AdminPathsScreen, AuditScreen, EnrollmentsScreen, PermissionsScreen, TaskEditScreen, UsersScreen, VersionScreen } from "./screens/admin";
 
 interface Tab {
@@ -39,6 +39,10 @@ function render(r: Route) {
       return <AssessedScreen />;
     case "review":
       return <ReviewScreen id={r.id} />;
+    case "courses":
+      return <CoursesScreen />;
+    case "course":
+      return <CourseScreen taskId={r.taskId} />;
     case "users":
       return <UsersScreen />;
     case "admin-paths":
@@ -77,7 +81,9 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(readTheme);
   const toastTimer = useRef<number>(0);
 
-  useEffect(() => window.scrollTo({ top: 0 }), [role]);
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [role]);
 
   useEffect(() => {
     const el = document.documentElement;
@@ -100,6 +106,7 @@ export default function App() {
     ],
     INSTRUCTOR: [
       { id: "queue", label: "Kolejka", icon: Inbox, root: { name: "queue" }, badge: openQueue },
+      { id: "courses", label: "Kursy", icon: GraduationCap, root: { name: "courses" } },
       { id: "assessed", label: "Ocenione", icon: ClipboardCheck, root: { name: "assessed" } },
     ],
     ADMIN: [
@@ -189,7 +196,7 @@ export default function App() {
         {/* Sidebar (desktop) */}
         <aside className="glass sticky top-0 hidden h-screen w-72 shrink-0 flex-col gap-6 border-y-0 border-l-0 px-4 py-6 lg:flex">
           <div className="flex items-center gap-3 px-2">
-            <Logo size={40} />
+            <Logo size={48} />
             <div>
               <div className="text-headline">Akademia</div>
               <div className="text-footnote text-fg-2">PSPK</div>

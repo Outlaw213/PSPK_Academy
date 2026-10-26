@@ -11,6 +11,8 @@ export type Route =
   | { name: "queue" }
   | { name: "assessed" }
   | { name: "review"; id: string }
+  | { name: "courses" }
+  | { name: "course"; taskId: string }
   | { name: "users" }
   | { name: "admin-paths" }
   | { name: "version" }
