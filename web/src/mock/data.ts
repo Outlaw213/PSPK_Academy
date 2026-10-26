@@ -39,7 +39,6 @@ export interface Task {
   id: string;
   position: number;
   name: string;
-  code: string;
   type: TaskType;
   status: TaskStatus;
   revision: number;
@@ -99,7 +98,6 @@ export interface Submission {
   id: string;
   taskId: string;
   taskName: string;
-  taskCode: string;
   participant: string;
   attempt: number;
   status: SubmissionStatus;
@@ -124,22 +122,13 @@ export const me = {
 const p = (id: string, tone: number, motif: Photo["motif"]): Photo => ({ id, tone, motif });
 const img = (id: string, url: string): Photo => ({ id, tone: 0, motif: "hook", url });
 
-const pad = (n: number) => String(n).padStart(2, "0");
-
-const counters = { P: 0, K: 0, T: 0, Q: 0 };
-const kinds = {
-  P: { type: "PRACTICAL", code: "PRACA WŁASNA" },
-  K: { type: "COURSE", code: "KURS" },
-  T: { type: "THEORY", code: "TEORIA" },
-  Q: { type: "QUIZ", code: "QUIZ" },
-} as const;
-// `n` keeps ids stable while the admin reorders; position is set from the array order below.
+const kinds = { P: "PRACTICAL", K: "COURSE", T: "THEORY", Q: "QUIZ" } as const;
+// `n` keeps ids stable while the admin reorders; position (and so the E1.2 label) comes from the array order.
 const t = (stage: number, n: number | string, type: keyof typeof kinds, name: string, days: number, status: TaskStatus = "LOCKED", extra: Partial<Task> = {}): Task => ({
   id: `t${stage}-${n}`,
   position: 0,
   name,
-  code: `${kinds[type].code} ${pad(++counters[type])}`,
-  type: kinds[type].type,
+  type: kinds[type],
   status,
   revision: 1,
   expectedDays: days,
@@ -349,7 +338,6 @@ export const myHistory: Submission[] = [
     id: "sub-12",
     taskId: "t1-2",
     taskName: "Haczyk / zawieszka",
-    taskCode: "PRACA WŁASNA 02",
     participant: "Jan Kowalski",
     attempt: 2,
     status: "NEEDS_IMPROVEMENT",
@@ -371,7 +359,6 @@ export const myHistory: Submission[] = [
     id: "sub-9",
     taskId: "t1-2",
     taskName: "Haczyk / zawieszka",
-    taskCode: "PRACA WŁASNA 02",
     participant: "Jan Kowalski",
     attempt: 1,
     status: "NEEDS_IMPROVEMENT",
@@ -392,7 +379,6 @@ export const myHistory: Submission[] = [
     id: "sub-7",
     taskId: "t1-16",
     taskName: "Podkowa",
-    taskCode: "KURS 01",
     participant: "Jan Kowalski",
     attempt: 1,
     status: "PASSED",
@@ -409,7 +395,6 @@ export const myHistory: Submission[] = [
     id: "sub-3",
     taskId: "t1-teoria",
     taskName: "Bezpieczeństwo pracy w kuźni",
-    taskCode: "TEORIA 01",
     participant: "Jan Kowalski",
     attempt: 1,
     status: "PASSED",
@@ -425,7 +410,6 @@ export const myHistory: Submission[] = [
     id: "sub-5",
     taskId: "t1-1",
     taskName: "Gwóźdź",
-    taskCode: "PRACA WŁASNA 01",
     participant: "Jan Kowalski",
     attempt: 1,
     status: "PASSED",
@@ -444,7 +428,6 @@ export const queue: Submission[] = [
     id: "sub-31",
     taskId: "t1-3",
     taskName: "Serce [dwa sposoby]",
-    taskCode: "PRACA WŁASNA 03",
     participant: "Piotr Zieliński",
     attempt: 1,
     status: "SUBMITTED",
@@ -458,7 +441,6 @@ export const queue: Submission[] = [
     id: "sub-30",
     taskId: "t1-2",
     taskName: "Haczyk / zawieszka",
-    taskCode: "PRACA WŁASNA 02",
     participant: "Katarzyna Wójcik",
     attempt: 3,
     status: "SUBMITTED",
@@ -472,7 +454,6 @@ export const queue: Submission[] = [
     id: "sub-28",
     taskId: "t1-5",
     taskName: "Liść",
-    taskCode: "PRACA WŁASNA 05",
     participant: "Tomasz Lewandowski",
     attempt: 2,
     status: "UNDER_REVIEW",
@@ -487,7 +468,6 @@ export const queue: Submission[] = [
     id: "sub-27",
     taskId: "t1-1",
     taskName: "Gwóźdź",
-    taskCode: "PRACA WŁASNA 01",
     participant: "Magdalena Kamińska",
     attempt: 1,
     status: "SUBMITTED",

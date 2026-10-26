@@ -5,7 +5,7 @@ import { Screen } from "../components/screen";
 import { Badge, Button, Group, inputClass, PhotoTile, ProgressBar, Row, StatusBadge, StatusDot, cx } from "../components/ui";
 import { allTasks, useStore } from "../store";
 import type { Attachment, Stage, Submission, Task } from "../mock/data";
-import { durationLabel, durationLong, submissionStatus, taskTypeLabel } from "../lib/status";
+import { durationLabel, durationLong, submissionStatus, taskLabel, taskTypeLabel } from "../lib/status";
 
 const MAX_PHOTOS = 10;
 
@@ -63,7 +63,7 @@ export function PathsScreen() {
   );
 }
 
-function TaskRow({ t }: { t: Task }) {
+function TaskRow({ t, stage }: { t: Task; stage: Stage }) {
   const { push } = useStore();
   return (
     <Row
@@ -77,7 +77,9 @@ function TaskRow({ t }: { t: Task }) {
     >
       <div className={cx("text-body", t.status === "LOCKED" && "text-fg-2")}>{t.name}</div>
       <div className="flex flex-wrap items-center gap-x-2 text-footnote text-fg-3">
-        <span>{t.code}</span>
+        <span>{taskLabel(stage, t)}</span>
+        <span aria-hidden>·</span>
+        <span>{taskTypeLabel[t.type]}</span>
         <span aria-hidden>·</span>
         <span>{durationLabel(t.expectedDays)}</span>
       </div>
@@ -108,14 +110,14 @@ function StageBlock({ s, locked }: { s: Stage; locked: boolean }) {
           </p>
         )}
       </div>
-      <Group title="Prace własne" footer={locked ? undefined : "Prace odblokowują się po kolei: następna po zaliczeniu poprzedniej."}>
+      <Group title="Zadania po kolei" footer={locked ? undefined : "Odblokowują się po kolei: następne po zaliczeniu poprzedniego."}>
         {works.map((t) => (
-          <TaskRow key={t.id} t={t} />
+          <TaskRow key={t.id} t={t} stage={s} />
         ))}
       </Group>
       <Group title="Kursy" footer={locked ? undefined : "Kursy możesz zaliczać w dowolnej kolejności. Wynik wpisuje instruktor po zajęciach."}>
         {courses.map((t) => (
-          <TaskRow key={t.id} t={t} />
+          <TaskRow key={t.id} t={t} stage={s} />
         ))}
       </Group>
     </section>
@@ -141,7 +143,7 @@ export function PathScreen() {
       {current && (
         <section className="flex flex-col gap-4 rounded-card bg-accent p-5 text-accent-fg sm:flex-row sm:items-center sm:p-6">
           <div className="min-w-0 flex-1">
-            <div className="text-footnote font-semibold uppercase tracking-[0.06em] opacity-80">Teraz · {current.code}</div>
+            <div className="text-footnote font-semibold uppercase tracking-[0.06em] opacity-80">Teraz · {current.label}</div>
             <h2 className="font-display text-title2">{current.name}</h2>
             <p className="mt-1 text-subhead opacity-90">
               {current.status === "NEEDS_IMPROVEMENT" ? "Instruktor skierował do poprawy. Zobacz uwagi i wyślij kolejną próbę." : "Praca czeka na Ciebie."}
@@ -281,10 +283,11 @@ export function TaskScreen({ taskId }: { taskId: string }) {
       onBack={pop}
       subtitle={
         <div className="mt-1 flex flex-col gap-2">
-          <span className="text-footnote font-bold uppercase tracking-[0.06em] text-fg-2">{t.code}</span>
+          <span className="text-footnote font-bold uppercase tracking-[0.06em] text-fg-2">
+            {t.label} · {taskTypeLabel[t.type]}
+          </span>
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={t.status} />
-            <Badge tone="brand">{taskTypeLabel[t.type]}</Badge>
             {hasCard && <span className="text-footnote text-fg-3">wersja treści {t.revision}</span>}
           </div>
         </div>
@@ -477,7 +480,6 @@ export function DraftScreen({ taskId }: { taskId: string }) {
         id: `sub-${Date.now()}`,
         taskId,
         taskName: t.name,
-        taskCode: t.code,
         participant: "Jan Kowalski",
         attempt: draft.attempt,
         status: "SUBMITTED",

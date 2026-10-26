@@ -230,7 +230,7 @@ export function CoursesScreen() {
               <Row key={c.id} onClick={() => push({ name: "course", taskId: c.id })} leading={<span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-soft/14 text-brand"><GraduationCap size={18} aria-hidden /></span>}>
                 <div className="text-body">{c.name}</div>
                 <div className="text-footnote text-fg-2">
-                  {c.code} · {durationLong(c.expectedDays)}
+                  {c.label} · {durationLong(c.expectedDays)}
                 </div>
               </Row>
             ))}
@@ -267,7 +267,7 @@ export function CourseScreen({ taskId }: { taskId: string }) {
   const label = { PASSED: "Zaliczony", NEEDS_IMPROVEMENT: "Do powtórki" } as const;
 
   return (
-    <Screen title={course.name} back="Kursy" onBack={pop} subtitle={`${course.code} · Etap ${course.stage.position} · ${durationLong(course.expectedDays)}`}>
+    <Screen title={course.name} back="Kursy" onBack={pop} subtitle={`${course.label} · ${durationLong(course.expectedDays)}`}>
       <Group title="Uczestnicy" footer="Zaliczenie jest ostateczne. Przy „Do powtórki” uczestnik może przyjść na kolejny termin.">
         {roster.map((r) => (
           <Row

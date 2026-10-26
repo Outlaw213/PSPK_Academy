@@ -22,7 +22,7 @@ import { Markdown } from "../components/markdown";
 import { Button, Field, Group, inputClass, PhotoTile, Row, Segmented, Sheet, cx } from "../components/ui";
 import { allTasks, useStore } from "../store";
 import type { Attachment, QuizQuestion, Stage, Task, TaskType } from "../mock/data";
-import { durationLabel, taskTypeLabel } from "../lib/status";
+import { durationLabel, taskLabel, taskTypeLabel } from "../lib/status";
 
 // Admin path builder (FR-ADM-02, Q-63). In the app every content save creates a new
 // task revision (BR-19) and passes never get revoked (BR-16) — the backend enforces both.
@@ -34,7 +34,6 @@ const typeInfo: Record<TaskType, { icon: LucideIcon; hint: string }> = {
   QUIZ: { icon: ListChecks, hint: "Pytania zamknięte z kluczem. Zaliczenie automatyczne od progu." },
 };
 
-const codePrefix: Record<TaskType, string> = { PRACTICAL: "PRACA WŁASNA", COURSE: "KURS", THEORY: "TEORIA", QUIZ: "QUIZ" };
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
@@ -81,12 +80,10 @@ export function VersionScreen() {
 
   const createTask = () => {
     if (!adding || !newName.trim()) return;
-    const count = allTasks(stages).filter((x) => x.type === newType).length + 1;
     const task: Task = {
       id: `new-${uid()}`,
       position: 0,
       name: newName.trim(),
-      code: `${codePrefix[newType]} ${String(count).padStart(2, "0")}`,
       type: newType,
       status: "LOCKED",
       revision: 1,
@@ -154,7 +151,7 @@ export function VersionScreen() {
                   <Icon size={18} className={cx("shrink-0", disabled ? "text-fg-3" : "text-brand")} aria-hidden />
                   <button type="button" onClick={() => push({ name: "task-edit", taskId: t.id })} className="focus-ring min-w-0 flex-1 rounded-ctl py-3 pl-2 text-left">
                     <div className={cx("truncate text-body", disabled && "text-fg-3 line-through")}>
-                      {t.position}. {t.name}
+                      {taskLabel(s, t)} · {t.name}
                     </div>
                     <div className="truncate text-footnote text-fg-2">
                       {taskTypeLabel[t.type]} · {durationLabel(t.expectedDays)} · wersja treści {t.revision}
@@ -434,7 +431,6 @@ export function TaskEditScreen({ taskId }: { taskId: string }) {
   const t = allTasks(stages).find((x) => x.id === taskId)!;
   const [f, setF] = useState({
     name: t.name,
-    code: t.code,
     type: t.type,
     days: String(t.expectedDays),
     quantity: t.quantity ?? "",
@@ -469,7 +465,6 @@ export function TaskEditScreen({ taskId }: { taskId: string }) {
             ? {
                 ...x,
                 name: f.name,
-                code: f.code,
                 type: f.type,
                 expectedDays: Math.max(1, Number(f.days) || 1),
                 quantity: f.quantity || undefined,
@@ -510,7 +505,7 @@ export function TaskEditScreen({ taskId }: { taskId: string }) {
       title={f.name || "Nowe zadanie"}
       back="Wersja 1"
       onBack={pop}
-      subtitle={`Etap ${t.stage.position} · ${t.stage.name} · obecnie wersja treści ${t.revision}`}
+      subtitle={`${t.label} · ${t.stage.name} · obecnie wersja treści ${t.revision} · oznaczenie zmienia się z kolejnością`}
       actions={
         f.type === "QUIZ" && !quizProblem ? (
           <Button
@@ -537,10 +532,7 @@ export function TaskEditScreen({ taskId }: { taskId: string }) {
       }
     >
       <div className="flex flex-col gap-4 rounded-card bg-bg-2 p-5">
-        <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
-          {line("name", "Tytuł")}
-          {line("code", "Oznaczenie")}
-        </div>
+        {line("name", "Tytuł")}
         <div className="flex flex-col gap-1.5">
           <span className="px-1 text-footnote font-semibold text-fg-2">Typ zadania</span>
           <Segmented label="Typ zadania" value={f.type} onChange={(v) => setF({ ...f, type: v })} options={(Object.keys(typeInfo) as TaskType[]).map((k) => ({ value: k, label: taskTypeLabel[k] }))} />

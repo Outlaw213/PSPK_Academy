@@ -13,7 +13,7 @@ Pola i tabele **[+]** wykraczają poza specyfikację v1 — zatwierdzone decyzja
 | `path_versions` | id, learning_path_id, version_number, description, is_active (= przyjmuje nowe zapisy; nowa wersja startuje jako nieaktywna), **[+] copied_from_version_id**, created_at | unique(learning_path_id, version_number) |
 | `stages` | id, path_version_id, name, description, position, created_at, updated_at | unique(path_version_id, position) DEFERRABLE INITIALLY DEFERRED (ADR-15) |
 | `tasks` | id, stage_id, position, is_active, created_at, updated_at — treść zadania przeniesiona do `task_revisions`; aktualna rewizja = najwyższy `revision_number` (ADR-14) | unique(stage_id, position) DEFERRABLE INITIALLY DEFERRED (ADR-15) |
-| **[+]** `task_revisions` | id, task_id, revision_number, name, description, instructions, task_type (`PRACTICAL`/`THEORY`/`QUIZ`/**[+]** `COURSE` — Q-56), estimated_minutes, difficulty (1–5), code, **[+] pass_threshold** (0–100, tylko QUIZ — Q-60), **[+] content_md** (treść Markdown — Q-62), assignment, evaluation_criteria, submission_requirements, material, quantity_description, expected_duration_days, created_by, created_at | unique(task_id, revision_number); wiersz niezmienny (Q-06) |
+| **[+]** `task_revisions` | id, task_id, revision_number, name, description, instructions, task_type (`PRACTICAL`/`THEORY`/`QUIZ`/**[+]** `COURSE` — Q-56), estimated_minutes, difficulty (1–5), **[+] pass_threshold** (0–100, tylko QUIZ — Q-60), **[+] content_md** (treść Markdown — Q-62), assignment, evaluation_criteria, submission_requirements, material, quantity_description, expected_duration_days, created_by, created_at | unique(task_id, revision_number); wiersz niezmienny (Q-06) |
 | **[+]** `task_materials` | id, task_id, storage_key, original_filename, mime_type, file_size, width, height, created_by, created_at | plik niezmienny (Q-19) |
 | **[+]** `quiz_questions` | id, revision_id, position, text, kind (`SINGLE`/`MULTI`) | unique(revision_id, position); niezmienne z rewizją (Q-60) |
 | **[+]** `quiz_options` | id, question_id, position, text, is_correct | unique(question_id, position); ≥ 1 poprawna na pytanie (walidacja w serwisie) |
@@ -47,7 +47,7 @@ Uprawnienia instruktorów i zdjęcia szkicu to konfiguracja / dane robocze: odeb
 | Na karcie | Pole `task_revisions` |
 |---|---|
 | Tytuł („Haczyk / zawieszka”) | `name` |
-| „PRACA WŁASNA 02” | `code` |
+| „PRACA WŁASNA 02” | — oznaczenie wyliczane `E{etap}.{pozycja}`, np. E1.2 (Q-64); typ z `task_type` |
 | Czas: „2 tygodnie” (tylko informacja, Q-20) | `expected_duration_days` |
 | Do wykonania: „2 sztuki” | `quantity_description` |
 | Materiał: „płaskownik 30–50 × 3–5 mm…” | `material` |

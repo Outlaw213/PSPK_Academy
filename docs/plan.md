@@ -25,7 +25,7 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] v3: kreator ścieżki (dodawanie zadań i etapów, typy), edytor quizu, teoria z materiałami (Q-60…Q-62)
 **DoD:** PO akceptuje kierunek designu.
 
-## M1 — Szkielet i infrastruktura (STEP 2–5) ← GOTOWE, CZEKA NA AKCEPTACJĘ
+## M1 — Szkielet i infrastruktura (STEP 2–5) ✔ zaakceptowane 2026-10-26
 - [x] Struktura katalogów, `.gitignore`, `.env.example`, `CLAUDE.md`
 - [x] `docker-compose.yml`: postgres, backend, wolumen na zdjęcia (Q-34); healthchecki; wolumeny
 - [x] `config.py` (pydantic-settings), `database.py` (async engine/sesja), `main.py`, `GET /health`
@@ -33,7 +33,7 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] pytest + conftest z bazą testową
 **DoD:** `docker compose up` startuje usługi, `/health` = 200 (sprawdza DB), `/docs` działa, test dymny zielony.
 
-## M2 — Modele i migracja 0001 (STEP 6–7)
+## M2 — Modele i migracja 0001 (STEP 6–7) ← JESTEŚMY TUTAJ
 - [ ] Wszystkie modele z `database.md`, w tym `user_roles`, `task_revisions`, `task_materials`, `task_revision_materials`, `refresh_tokens`
 - [ ] Migracja 0001, indeksy częściowe, checki
 - [ ] Testy ograniczeń DB (unikalności, jedna otwarta próba, jedno PASSED, limit pozycji zdjęć, brak samooceny)

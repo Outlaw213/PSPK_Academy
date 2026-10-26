@@ -7,7 +7,6 @@
 | ID | Pytanie | Blokuje |
 |---|---|---|
 | Q-36a | Treść kart dla pozostałych zadań (dostarczone: Haczyk / zawieszka, Serce). Kursy: czy mają karty i jakie kryteria zaliczenia. | seed M11 |
-| Q-58 | Pisownia nazw z listy zadań — w makiecie poprawione: „Zestaw sztućców” (było „Zesta wsztućcy”), „Zgrzewanie kowalskie” („kolwaskie”), „Hidden Tang” („Hiden”), „Gwóźdź” („Gwóźdz”). Do potwierdzenia. | seed M11 |
 | Q-59 | Logo w wektorze (SVG) — obecny PNG 465 px wystarcza na ekran, do druku i dużych rozmiarów lepszy wektor. | nie blokuje |
 | Q-46 | Kopie zapasowe: gdzie i jak często (baza + dysk zdjęć). | M11a |
 | Q-47 | DNS `pspk.pl` w Cloudflare. | M11a |
@@ -63,3 +62,5 @@
 | Q-61 | **Teoria:** materiał + polecenie, odpowiedź tekstem lub zdjęciem, ocenia instruktor (BR-22 bez zmian). | 2026-10-26 |
 | Q-62 | **Materiały zadań:** treść Markdown, załączniki PDF (≤ 20 MB, na dysku), linki do filmów (https, otwierane w nowej karcie) — dla każdego typu zadania (BR-33). | 2026-10-26 |
 | Q-63 | **Ścieżki układa admin:** kolejność etapów i zadań, treść, typ każdego zadania; może dodawać zadania teoretyczne i quizy do dowolnego etapu (FR-ADM-02). Program z listy (Q-36) to tylko dane startowe (seed). | 2026-10-26 |
+| Q-58 | **Pisownia nazw z listy** potwierdzona: „Zestaw sztućców”, „Zgrzewanie kowalskie”, „Hidden Tang”, „Gwóźdź”, „Topór”. | 2026-10-26 |
+| Q-64 | **Oznaczenie zadania `E{etap}.{pozycja}`** (np. E1.2; E2.1 = pierwsze zadanie Etapu 2), wspólne dla wszystkich typów; typ pokazywany osobno. Przelicza się automatycznie przy zmianie kolejności (BR-34). Zastępuje „PRACA WŁASNA 02” z kart. | 2026-10-26 |

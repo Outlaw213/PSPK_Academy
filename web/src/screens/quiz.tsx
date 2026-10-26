@@ -43,7 +43,6 @@ export function QuizScreen({ taskId, preview }: { taskId: string; preview?: bool
         id: `sub-${Date.now()}`,
         taskId,
         taskName: t.name,
-        taskCode: t.code,
         participant: "Jan Kowalski",
         attempt: h.filter((x) => x.taskId === taskId).length + 1,
         status: passed ? "PASSED" : "NEEDS_IMPROVEMENT",
@@ -67,7 +66,7 @@ export function QuizScreen({ taskId, preview }: { taskId: string; preview?: bool
       title={t.name}
       back={preview ? "Edycja" : "Zadanie"}
       onBack={pop}
-      subtitle={`${t.code} · ${total} pytań · zaliczenie od ${quiz.threshold}% (${need} z ${total})${preview ? " · podgląd admina, wynik nie jest zapisywany" : ""}`}
+      subtitle={`${t.label} · ${total} pytań · zaliczenie od ${quiz.threshold}% (${need} z ${total})${preview ? " · podgląd admina, wynik nie jest zapisywany" : ""}`}
       footer={
         result ? (
           passed || preview ? (

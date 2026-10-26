@@ -41,3 +41,6 @@ export const durationLong = (days: number) => {
 
 export const durationLabel = (days: number) =>
   days >= 7 ? `${days / 7} tyg.` : days === 1 ? "1 dzień" : `${days} dni`;
+
+/** Task label E{stage}.{position} (BR-34). In the app the backend sends it as `label`. */
+export const taskLabel = (stage: { position: number }, task: { position: number }) => `E${stage.position}.${task.position}`;

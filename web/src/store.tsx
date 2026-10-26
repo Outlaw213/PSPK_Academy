@@ -1,5 +1,6 @@
 import { createContext, useContext } from "react";
 import type { AdminUser, Stage, Submission } from "./mock/data";
+import { taskLabel } from "./lib/status";
 
 export type Route =
   | { name: "paths" }
@@ -53,4 +54,7 @@ export function useStore() {
   return s;
 }
 
-export const allTasks = (stages: Stage[]) => stages.flatMap((s) => s.tasks.map((t) => ({ ...t, stage: s })));
+export const allTasks = (stages: Stage[]) => stages.flatMap((s) => s.tasks.map((t) => ({ ...t, stage: s, label: taskLabel(s, t) })));
+
+/** Current label of a task by id; history shows today's numbering (Q-64). */
+export const labelOf = (stages: Stage[], taskId: string) => allTasks(stages).find((t) => t.id === taskId)?.label ?? "";
