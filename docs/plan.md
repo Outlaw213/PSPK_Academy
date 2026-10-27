@@ -78,17 +78,17 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] TEST 3, TEST 4, TEST 6, BR-07, BR-13, BR-15; `test_structure.py` i `test_enrollments.py` (BR-29) — zrobione w M5
 **DoD:** kryteria §29 „Final pass”.
 
-## M9 — Magazyn obiektów i pliki (STEP 15) ← JESTEŚMY TUTAJ
+## M9 — Magazyn obiektów i pliki (STEP 15) ✔ zaakceptowane 2026-10-27
 - [x] Upload zdjęć wzorcowych i załączników PDF przez admina (`/admin/tasks/{id}/materials`, `/attachments`) — od razu nowa wersja treści; kolejność, podpisy i usuwanie przez PUT zadania; kopia wersji ścieżki przenosi pliki
 - [x] Pobieranie zdjęć wzorcowych i PDF z kontrolą uprawnień (BR-17, BR-33, `test_attachments.py`); zdjęcia zgłoszeń — już w M7
 - [x] Zły typ (po zawartości), za duży plik, brak plików-sierot na dysku; testy na prawdziwym magazynie dyskowym (`STORAGE_ROOT` testów)
 - [x] Pomiar rozmiarów zdjęć po obróbce; obróbka zdjęcia poza pętlą zdarzeń serwera (≈ 2 s na zdjęcie 12 MP)
 **DoD:** kryteria §29 „Submissions” (zdjęcia).
 
-## M10 — AuditLog i podglądy admina (STEP 16)
-- [ ] Wpisy dla wszystkich akcji z `api.md` w transakcjach operacji
-- [ ] `/admin/submissions`, `/admin/audit-logs`
-- [ ] `test_audit.py`
+## M10 — AuditLog i podglądy admina (STEP 16) ← JESTEŚMY TUTAJ
+- [x] Wpisy dla wszystkich akcji z `api.md` w transakcjach operacji — test porównuje katalog z `api.md` z tym, co faktycznie trafia do bazy; operacja odrzucona = brak wpisu; brak haseł i tokenów
+- [x] `/admin/submissions` (+ szczegóły z wersją treści i wszystkimi próbami), `/admin/audit-logs` (filtry, zakres dat, paginacja)
+- [x] `test_audit.py`
 **DoD:** kryteria §29 „Audit”.
 
 ## M11 — Domknięcie MVP backendu (STEP 17–18)
