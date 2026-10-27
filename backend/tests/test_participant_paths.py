@@ -107,8 +107,8 @@ async def test_fr_par02_task_detail_with_status_and_current_content(api, make_us
 async def test_br32_quiz_answer_key_hidden_from_participant(api, make_user):
     _, _, ids, _, me = await _setup(api, make_user)
     r = await api.get(f"/api/v1/tasks/{ids['quiz']}", headers=me)
-    q = r.json()["revision"]["questions"]
-    assert len(q) == 2 and all("is_correct" not in o for qu in q for o in qu["options"])
+    # Still locked here, so the questions are not sent at all (Q-68); the unlocked case is in test_locked_preview.py.
+    assert r.json()["revision"]["question_count"] == 2
     assert "is_correct" not in r.text
 
 

@@ -121,7 +121,8 @@ export interface Revision {
   estimated_minutes: number | null;
   difficulty: number | null;
   pass_threshold: number | null;
-  questions: PublicQuestion[];
+  questions: PublicQuestion[]; // empty while the quiz is LOCKED (Q-68)
+  question_count: number;
   video_links: VideoLink[];
   materials: Material[];
   attachments: Attachment[];

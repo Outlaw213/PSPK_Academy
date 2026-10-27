@@ -115,7 +115,21 @@ test("karta Haczyk: zdjęcie wzorcowe z API", async ({ page, request }, info) =>
   const ref = page.getByRole("img", { name: "Wymagane: 2 podobne egzemplarze" });
   await expect.poll(() => ref.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
   await expect(page.getByText("Kształtowanie rybiego ogona – wykonanie ozdobnego zakończenia dolnej części.")).toBeVisible();
+  await expect(page.getByRole("note")).toContainText("Podgląd — zadanie jeszcze zablokowane."); // readable, not startable (Q-68)
   await shot(page, "07-karta-haczyk", info.project.name);
+});
+
+test("zablokowany quiz: opis i liczba pytań, bez treści pytań", async ({ page, request }, info) => {
+  const p = await newParticipant(request);
+  await uiLogin(page, p.email, p.password);
+  await page.getByRole("button", { name: /Podstawy kowalstwa/ }).click();
+  await row(page, /E1\.4.*Quiz/).click();
+  await expect(title(page, "Stal i ogień — test wiedzy")).toBeVisible();
+  await expect(page.getByRole("note")).toContainText("Pytania zobaczysz, gdy quiz się odblokuje.");
+  await expect(page.getByText("5 pytań zamkniętych")).toBeVisible();
+  await expect(page.getByText(/Jaki kolor żaru/)).toHaveCount(0); // not even sent by the server (Q-68)
+  await expect(page.getByRole("button", { name: "Rozpocznij quiz" })).toHaveCount(0);
+  await shot(page, "11-quiz-zablokowany", info.project.name);
 });
 
 test("quiz: nieudana próba, potem zaliczenie i odblokowanie Serca", async ({ page, request }, info) => {

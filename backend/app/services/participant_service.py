@@ -122,6 +122,13 @@ async def structure(session: AsyncSession, user: User, version_id: uuid.UUID) ->
     )
 
 
+def _public(revision, status: str) -> PublicRevision:
+    """PublicRevision has no is_correct: the quiz key never reaches the participant (BR-32).
+    A locked task is readable in full, except the quiz questions (Q-68)."""
+    public = PublicRevision.model_validate(revision.model_dump())
+    return public.model_copy(update={"questions": []}) if status == "LOCKED" else public
+
+
 async def task_detail(session: AsyncSession, user: User, task_id: uuid.UUID) -> TaskDetail:
     task = await session.get(Task, task_id)
     if task is None or not task.is_active:
@@ -135,8 +142,7 @@ async def task_detail(session: AsyncSession, user: User, task_id: uuid.UUID) -> 
         label=t.label,
         stage=StageRef(id=stage.id, name=stage.name, position=stage.position),
         status=t.status,
-        # PublicRevision has no is_correct: the quiz key never reaches the participant (BR-32).
-        revision=PublicRevision.model_validate(revision.model_dump()),
+        revision=_public(revision, t.status),
     )
 
 

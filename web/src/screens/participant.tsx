@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from "react";
-import { ArrowRight, Camera, ClipboardList, ExternalLink, FileText, GraduationCap, Hourglass, Info, ListChecks, Lock, MessageSquareText, Package, PenLine, PlayCircle, Ruler, Send, Target, Trash2 } from "lucide-react";
+import { ArrowRight, Camera, ClipboardList, ExternalLink, Eye, FileText, GraduationCap, Hourglass, Info, ListChecks, Lock, MessageSquareText, Package, PenLine, PlayCircle, Ruler, Send, Target, Trash2 } from "lucide-react";
 import { Markdown } from "../components/markdown";
 import { Screen } from "../components/screen";
 import { ApiPhotoTile } from "../components/files";
@@ -343,7 +343,7 @@ function TaskContent({ task }: { task: TaskDetail }) {
 
       {r.task_type === "QUIZ" && (
         <section className="grid grid-cols-2 gap-3">
-          <Meta icon={ListChecks} label="Pytania" value={`${r.questions.length} pytań zamkniętych`} />
+          <Meta icon={ListChecks} label="Pytania" value={`${r.question_count} pytań zamkniętych`} />
           <Meta icon={Target} label="Zaliczenie" value={`od ${r.pass_threshold}% · wynik od razu`} />
         </section>
       )}
@@ -495,6 +495,16 @@ export function TaskScreen({ taskId }: { taskId: string }) {
           Etap {t.stage.position} · {t.stage.name}
         </Eyebrow>
       </div>
+
+      {t.status === "LOCKED" && (
+        <section className="flex gap-3 rounded-card bg-info/12 p-4" role="note">
+          <Eye size={20} className="mt-0.5 shrink-0 text-info" aria-hidden />
+          <p className="text-subhead">
+            <span className="font-semibold">Podgląd — zadanie jeszcze zablokowane.</span> Możesz się przygotować; wykonasz je po zaliczeniu poprzedniej pracy
+            {type === "QUIZ" ? ". Pytania zobaczysz, gdy quiz się odblokuje." : "."}
+          </p>
+        </section>
+      )}
 
       {t.status === "NEEDS_IMPROVEMENT" && lastAssessed && <FeedbackCard s={lastAssessed} />}
 

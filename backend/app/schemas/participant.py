@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from app.schemas.content import AttachmentOut, MaterialOut
 from app.schemas.enrollment import PathRef
@@ -104,10 +104,18 @@ class PublicRevision(BaseModel):
     estimated_minutes: int | None
     difficulty: int | None
     pass_threshold: int | None
-    questions: list[PublicQuestion]
+    questions: list[PublicQuestion]  # empty while the quiz is LOCKED (Q-68)
+    question_count: int
     video_links: list[PublicVideoLink]
     materials: list[MaterialOut]
     attachments: list[AttachmentOut]
+
+    @model_validator(mode="before")
+    @classmethod
+    def _count_questions(cls, data):
+        if isinstance(data, dict) and "question_count" not in data:
+            data = {**data, "question_count": len(data.get("questions") or [])}
+        return data
 
 
 class StageRef(BaseModel):

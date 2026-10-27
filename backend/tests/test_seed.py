@@ -70,8 +70,8 @@ async def test_q36_cards_haczyk_and_serce_with_reference_photos(api, committed):
     )
     assert photo.status_code == 200 and photo.headers["content-type"] == "image/webp"
     quiz = (await api.get(f"/api/v1/tasks/{tasks['Stal i ogień — test wiedzy']['id']}", headers=h)).json()["revision"]
-    assert len(quiz["questions"]) == 5 and quiz["pass_threshold"] == 80
-    assert all("is_correct" not in o for q in quiz["questions"] for o in q["options"])
+    # The quiz is still locked for a new participant: its 5 questions are counted, not sent (Q-68).
+    assert quiz["question_count"] == 5 and quiz["questions"] == [] and quiz["pass_threshold"] == 80
     bhp = (await api.get(f"/api/v1/tasks/{tasks['Bezpieczeństwo pracy w kuźni']['id']}", headers=h)).json()["revision"]
     assert bhp["content_md"].startswith("Kuźnia to miejsce pracy") and bhp["video_links"]
 

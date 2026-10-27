@@ -32,7 +32,7 @@ Klient przeglądarkowy wysyła nagłówek `X-Client: web`. Wtedy `refresh_token`
 | GET | /me/paths | 200 lista zapisów | |
 | GET | /me/paths/{path_version_id} | 200 wersja + etapy + zadania (bez statusów) | 404 |
 | GET | /me/paths/{path_version_id}/progress | 200 struktura z §17 (nazwy wg widocznej rewizji, każde zadanie z `label`, np. `"E1.2"` — BR-34) | 404 |
-| GET | /tasks/{task_id} | 200 zadanie: widoczna rewizja (BR-19) + `status` + zdjęcia wzorcowe + **[+]** `content_md`, załączniki, pytania quizu (bez `is_correct` przed zaliczeniem) | 404 |
+| GET | /tasks/{task_id} | 200 zadanie: widoczna rewizja (BR-19) + `status` + zdjęcia wzorcowe + **[+]** `content_md`, załączniki, pytania quizu (bez `is_correct`); `revision.question_count` zawsze, a `questions: []`, gdy zadanie jest `LOCKED` (Q-68) | 404 |
 | GET | **[+]** /tasks/{task_id}/attachments/{attachment_id} | 200 PDF (stream); uczestnik zapisany na wersję, instruktor z uprawnieniem, admin | 404 |
 | POST | **[+]** /tasks/{task_id}/quiz-attempts | 201 submission + assessment z `score` (`answers: [{question_id, option_ids[]}]`) | 403 NO_ACTIVE_ENROLLMENT, 409 TASK_LOCKED, 409 TASK_ALREADY_PASSED, 409 TASK_NOT_QUIZ, 422 QUIZ_ANSWERS_INVALID |
 | GET | **[+]** /tasks/{task_id}/materials/{material_id} | 200 obraz `image/webp` (stream); dostęp jak przy załącznikach | 404 |
