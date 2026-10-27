@@ -67,15 +67,25 @@ async def stage_of_submission(session: AsyncSession, sub: Submission) -> Stage:
     return await session.get(Stage, task.stage_id)
 
 
-async def check_can_assess(session: AsyncSession, instructor_id: uuid.UUID, sub: Submission) -> None:
-    """The one place deciding whether an instructor may claim or assess (BR-06, BR-07, BR-24, BR-25, BR-27)."""
+def not_authorized() -> AppError:
+    return AppError("INSTRUCTOR_NOT_AUTHORIZED", "You have no permission for this path or stage.", 403)
+
+
+async def check_can_assess_in(
+    session: AsyncSession, instructor_id: uuid.UUID, participant_id: uuid.UUID, stage: Stage
+) -> None:
+    """The one place deciding whether an instructor may claim, assess or record a result for a
+    participant in a stage (BR-06, BR-07, BR-24, BR-25, BR-27, BR-30)."""
     if not await has_instructor_role(session, instructor_id):
         raise AppError("FORBIDDEN", "You do not have access to this resource.", 403)
-    if sub.user_id == instructor_id:
+    if participant_id == instructor_id:
         raise AppError("SELF_ASSESSMENT_FORBIDDEN", "You cannot assess your own submission.", 403)
-    scope = await instructor_scope(session, instructor_id)
-    if not scope.covers(await stage_of_submission(session, sub)):
-        raise AppError("INSTRUCTOR_NOT_AUTHORIZED", "You have no permission for this path or stage.", 403)
+    if not (await instructor_scope(session, instructor_id)).covers(stage):
+        raise not_authorized()
+
+
+async def check_can_assess(session: AsyncSession, instructor_id: uuid.UUID, sub: Submission) -> None:
+    await check_can_assess_in(session, instructor_id, sub.user_id, await stage_of_submission(session, sub))
 
 
 async def can_view(session: AsyncSession, instructor_id: uuid.UUID, sub: Submission) -> bool:

@@ -65,17 +65,17 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] TEST 5, TEST 7, TEST 8, TEST 9, TEST 12, BR-14, BR-17, BR-21, BR-22, BR-23
 **DoD:** nieograniczone próby, pełna historia, brak obejścia blokad, limit zdjęć.
 
-## M7 — Uprawnienia instruktora, claim, release (STEP 13) ← GOTOWE, CZEKA NA AKCEPTACJĘ
+## M7 — Uprawnienia instruktora, claim, release (STEP 13) ✔ zaakceptowane 2026-10-27
 - [x] Uprawnienia ścieżka/etap (nadanie, lista, odebranie), kolejka, szczegóły, claim, release ręczny i automatyczny, zakaz samooceny
 - [x] TEST 10, TEST 11, test równoległego claim (N równoległych żądań → dokładnie 1×200), BR-25, BR-26
 - [x] Dostęp do zdjęć zgłoszeń: właściciel, instruktor z uprawnieniem, admin (przeniesione z M9)
 **DoD:** kryteria §29 „Instructor” (część claim).
 
-## M8 — Ocena i ostateczne zaliczenie (STEP 14)
-- [ ] Assessment, przejścia stanów, automatyczne COMPLETED zapisu, zgłoszenie oceniane wg swojej rewizji
-- [ ] Wyniki kursów przez instruktora (BR-30, FR-INS-06, `test_courses.py`)
-- [ ] Quiz z automatyczną oceną (BR-32, `test_quiz.py`)
-- [ ] TEST 3, TEST 4, TEST 6, BR-07, BR-13, BR-15, `test_structure.py` (część ze zgłoszeniami), `test_enrollments.py` (BR-29)
+## M8 — Ocena i ostateczne zaliczenie (STEP 14) ← JESTEŚMY TUTAJ
+- [x] Assessment (`POST /submissions/{id}/assessment`), przejścia stanów, automatyczne COMPLETED zapisu, zgłoszenie oceniane wg swojej rewizji (`test_assessment.py`)
+- [x] Wyniki kursów przez instruktora: lista kursów w zakresie, uczestnicy, wpisanie wyniku (BR-30, FR-INS-06, `test_courses.py`)
+- [x] Quiz z automatyczną oceną (BR-32, `test_quiz.py`) — zrobione już w M6
+- [x] TEST 3, TEST 4, TEST 6, BR-07, BR-13, BR-15; `test_structure.py` i `test_enrollments.py` (BR-29) — zrobione w M5
 **DoD:** kryteria §29 „Final pass”.
 
 ## M9 — Magazyn obiektów i pliki (STEP 15)

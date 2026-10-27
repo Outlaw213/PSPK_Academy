@@ -103,12 +103,15 @@ PASSWORD = "kowadlo-i-mlot-2026"
 
 @pytest.fixture
 async def committed(migrated_db):
-    """Sessionmaker writing committed rows; truncates every table before the test."""
+    """Sessionmaker writing committed rows; truncates every table before and after the test,
+    so committed rows never leak into tests using the rolled-back `db` session."""
     engine = create_async_engine(os.environ["DATABASE_URL"])
     tables = ", ".join(t.name for t in Base.metadata.sorted_tables)
     async with engine.begin() as conn:
         await conn.execute(text(f"TRUNCATE {tables} CASCADE"))
     yield async_sessionmaker(engine, expire_on_commit=False)
+    async with engine.begin() as conn:
+        await conn.execute(text(f"TRUNCATE {tables} CASCADE"))
     await engine.dispose()
 
 

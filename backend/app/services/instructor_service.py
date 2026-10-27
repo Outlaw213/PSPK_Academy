@@ -1,4 +1,4 @@
-"""Instructor queue, details, claim and release (FR-INS-01…03, FR-INS-05, BR-06, BR-26)."""
+"""Instructor queue, details, claim, release and course lists (FR-INS-01…03, FR-INS-05, FR-INS-06, BR-06, BR-26)."""
 
 import uuid
 from datetime import UTC, datetime
@@ -7,9 +7,26 @@ from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.errors import AppError
-from app.models import LearningPath, PathVersion, Stage, Submission, SubmissionPhoto, Task, TaskRevision, User
-from app.schemas.instructor import QueueItem, ReviewDetail
-from app.services import audit_service, content_service, permission_service, submission_service, task_service
+from app.models import (
+    Enrollment,
+    LearningPath,
+    PathVersion,
+    Stage,
+    Submission,
+    SubmissionPhoto,
+    Task,
+    TaskRevision,
+    User,
+)
+from app.schemas.instructor import CourseItem, CourseParticipant, QueueItem, ReviewDetail
+from app.services import (
+    assessment_service,
+    audit_service,
+    content_service,
+    permission_service,
+    submission_service,
+    task_service,
+)
 
 
 def not_found() -> AppError:
@@ -169,3 +186,90 @@ async def release(
     await session.commit()
     await session.refresh(sub)
     return sub
+
+
+# --- courses (FR-INS-06) ----------------------------------------------------------------------
+
+
+async def courses(session: AsyncSession, instructor: User, path_version_id: uuid.UUID | None) -> list[CourseItem]:
+    """Active COURSE tasks (type from the current revision) in the instructor's scope."""
+    scope = await permission_service.instructor_scope(session, instructor.id)
+    latest = (
+        select(TaskRevision.task_id, func.max(TaskRevision.revision_number).label("n"))
+        .group_by(TaskRevision.task_id)
+        .subquery()
+    )
+    stmt = (
+        select(Task, Stage, TaskRevision.name)
+        .join(Stage, Stage.id == Task.stage_id)
+        .join(latest, latest.c.task_id == Task.id)
+        .join(
+            TaskRevision,
+            (TaskRevision.task_id == Task.id) & (TaskRevision.revision_number == latest.c.n),
+        )
+        .where(Task.is_active, TaskRevision.task_type == "COURSE", permission_service.scope_filter(scope))
+        .order_by(Stage.path_version_id, Stage.position, Task.position)
+    )
+    if path_version_id:
+        stmt = stmt.where(Stage.path_version_id == path_version_id)
+    rows = (await session.execute(stmt)).all()
+    labels = await _labels(session, {stage.id for _, stage, _ in rows})
+    out = []
+    for task, stage, name in rows:
+        version = await session.get(PathVersion, stage.path_version_id)
+        path = await session.get(LearningPath, version.learning_path_id)
+        active = select(Enrollment.user_id).where(
+            Enrollment.path_version_id == version.id, Enrollment.status == "ACTIVE"
+        )
+        enrolled = await session.scalar(select(func.count()).select_from(active.subquery()))
+        passed = await session.scalar(
+            select(func.count())
+            .select_from(Submission)
+            .where(Submission.task_id == task.id, Submission.status == "PASSED", Submission.user_id.in_(active))
+        )
+        out.append(
+            CourseItem(
+                task={"id": task.id, "label": labels.get(task.id), "name": name},
+                stage={"id": stage.id, "name": stage.name, "position": stage.position},
+                path={"id": path.id, "name": path.name, "version": version.version_number},
+                enrolled=enrolled,
+                passed=passed,
+            )
+        )
+    return out
+
+
+async def course_participants(session: AsyncSession, instructor: User, task_id: uuid.UUID) -> list[CourseParticipant]:
+    """Participants with an active enrollment in the course's version and their status of it."""
+    task, stage = await assessment_service.course_task(session, task_id)
+    if not (await permission_service.instructor_scope(session, instructor.id)).covers(stage):
+        raise permission_service.not_authorized()
+    enrollments = (
+        await session.execute(
+            select(Enrollment, User)
+            .join(User, User.id == Enrollment.user_id)
+            .where(
+                Enrollment.path_version_id == stage.path_version_id,
+                Enrollment.status == "ACTIVE",
+                Enrollment.user_id != instructor.id,  # BR-25
+            )
+            .order_by(User.last_name, User.first_name)
+        )
+    ).all()
+    out = []
+    for e, u in enrollments:
+        state = await task_service.compute_path_statuses(session, e)
+        attempts = await session.scalar(
+            select(func.count())
+            .select_from(Submission)
+            .where(Submission.task_id == task.id, Submission.user_id == u.id, Submission.status != "CANCELLED")
+        )
+        out.append(
+            CourseParticipant(
+                participant={"id": u.id, "first_name": u.first_name, "last_name": u.last_name},
+                enrollment_id=e.id,
+                status=state.task(task.id).status,
+                attempts=attempts,
+            )
+        )
+    return out

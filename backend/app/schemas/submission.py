@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -78,3 +79,19 @@ class QuizResult(BaseModel):
     total: int
     passed: bool
     review: list[QuizReview] | None  # the key is shown only after a pass (BR-32)
+
+
+AssessmentResult = Literal["PASSED", "NEEDS_IMPROVEMENT"]
+
+
+class AssessmentIn(BaseModel):
+    result: AssessmentResult
+    comment: str | None = Field(default=None, max_length=5000)
+
+
+class CourseResultIn(AssessmentIn):
+    user_id: uuid.UUID
+
+
+class AssessedOut(BaseModel):
+    submission: SubmissionOut

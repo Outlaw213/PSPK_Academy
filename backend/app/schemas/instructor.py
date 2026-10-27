@@ -28,3 +28,18 @@ class PermissionIn(BaseModel):
 
 
 QueueStatus = Literal["SUBMITTED", "UNDER_REVIEW"]
+
+
+class CourseItem(BaseModel):
+    task: dict  # {id, label, name}
+    stage: dict
+    path: dict
+    enrolled: int  # active enrollments of the version
+    passed: int
+
+
+class CourseParticipant(BaseModel):
+    participant: dict
+    enrollment_id: uuid.UUID
+    status: str  # as in the participant's view (task_service)
+    attempts: int

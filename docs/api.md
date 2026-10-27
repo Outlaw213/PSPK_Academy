@@ -104,6 +104,9 @@ Szczegóły `GET /instructor/submissions/{id}`: `{submission, participant, task,
 Uprawnienie `POST /admin/instructor-permissions`: dokładnie jedno z `path_version_id` / `stage_id` (inaczej 422 VALIDATION_ERROR); duplikat → 409 PERMISSION_EXISTS.
 `GET /submissions/{id}/photos/{photo_id}`: właściciel, instruktor z uprawnieniem do zadania albo admin; inni → 404.
 
+**Ocena i kursy** (M8). `POST /submissions/{id}/assessment` `{result: PASSED|NEEDS_IMPROVEMENT, comment}` → 201 `{submission}` (z oceną). Kolejność sprawdzeń: zgłoszenie istnieje (404) → rola i uprawnienie (403 INSTRUCTOR_NOT_AUTHORIZED / SELF_ASSESSMENT_FORBIDDEN) → stan `UNDER_REVIEW` (409) → przypisany instruktor (403 NOT_ASSIGNED_INSTRUCTOR) → komentarz (422). Ocena jest jedna i ostateczna.
+Kursy: `GET /instructor/courses?path_version_id=` → `[{task{id, label, name}, stage, path, enrolled, passed}]`; `GET /instructor/courses/{task_id}/participants` → `[{participant, enrollment_id, status, attempts}]` dla aktywnych zapisów wersji (`status` jak w widoku uczestnika); `POST /instructor/courses/{task_id}/results` `{user_id, result, comment}` → 201 `{submission}`. Zadanie inne niż kurs → 409 TASK_NOT_COURSE.
+
 **Widok uczestnika** (M5). `GET /me/paths/{path_version_id}/progress`:
 `{path: {id, name, version}, enrollment_status, progress: {completed, total}, stages: [{id, name, position, gate_open, tasks: [{id, label, name, task_type, position, status}]}]}` — tylko aktywne zadania, etapy bez aktywnych zadań pominięte (BR-01). Kolejność i typy dokładnie takie, jak ustawił admin.
 `GET /tasks/{task_id}`: `{id, label, stage: {id, name, position}, status, revision}` — `revision` jak w API admina, ale pytania quizu **bez** `is_correct` (BR-32). Zadanie wyłączone albo spoza zapisów użytkownika → 404.
@@ -150,6 +153,7 @@ Uprawnienie `POST /admin/instructor-permissions`: dokładnie jedno z `path_versi
 | QUIZ_INVALID | 422 | quiz bez pytań, pytanie bez poprawnej odpowiedzi, próg poza 1–100 |
 | ATTACHMENT_TOO_LARGE | 413 | > MAX_ATTACHMENT_SIZE_MB |
 | INVALID_ATTACHMENT_TYPE | 422 | plik inny niż PDF (po zawartości) |
+| TASK_NOT_COURSE | 409 | wynik kursu dla zadania, które nie jest kursem |
 | TASK_IS_COURSE | 409 | uczestnik próbuje utworzyć zgłoszenie dla kursu (BR-30) |
 | DATABASE_UNAVAILABLE | 503 | `/health`: brak połączenia z bazą |
 | INTERNAL_ERROR | 500 | nieobsłużony błąd — bez szczegółów w odpowiedzi (NFR-02) |
