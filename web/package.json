@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "build:single": "tsc -b && vite build --mode single",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "e2e": "sh e2e/run.sh"
   },
   "dependencies": {
     "lucide-react": "^0.460.0",
@@ -17,6 +18,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
+    "@playwright/test": "1.63.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",

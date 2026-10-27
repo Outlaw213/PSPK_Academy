@@ -1,4 +1,4 @@
-# PSPK Akademia — development stack (M1). Production deployment: M11a (ADR-23).
+# PSPK Akademia — development stack: database, API and the web panel (http://localhost:8080). Production deployment: M11a (ADR-23).
 services:
   postgres:
     image: postgres:18-alpine
@@ -14,7 +14,7 @@ services:
       timeout: 3s
       retries: 10
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
 
   backend:
     build: ./backend
@@ -35,7 +35,16 @@ services:
       timeout: 5s
       retries: 5
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+
+  web:
+    build: ./web
+    image: pspk-akademia-web
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8080}:80"
 
 volumes:
   postgres-data:

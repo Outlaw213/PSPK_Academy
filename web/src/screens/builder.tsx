@@ -20,9 +20,9 @@ import {
 import { Screen } from "../components/screen";
 import { Markdown } from "../components/markdown";
 import { Button, Field, Group, inputClass, PhotoTile, Row, Segmented, Sheet, cx } from "../components/ui";
-import { allTasks, useStore } from "../store";
+import { allTasks, taskLabel, useStore } from "../store";
 import type { Attachment, QuizQuestion, Stage, Task, TaskType } from "../mock/data";
-import { durationLabel, taskLabel, taskTypeLabel } from "../lib/status";
+import { durationLabel, taskTypeLabel } from "../lib/status";
 
 // Admin path builder (FR-ADM-02, Q-63). In the app every content save creates a new
 // task revision (BR-19) and passes never get revoked (BR-16) — the backend enforces both.

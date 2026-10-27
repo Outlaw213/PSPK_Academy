@@ -2,7 +2,7 @@
 
 System edukacyjny Polskiego Stowarzyszenia Pasjonatów Kowalstwa: ścieżki nauki, zadania z kart, zgłoszenia ze zdjęciami i ocena instruktora.
 
-Backend MVP (M1–M11) jest gotowy: API dla uczestnika, instruktora i administratora. Panel WWW (`web/`) to na razie makieta na danych przykładowych — podłączenie do API to M12, Android to M13. Plan i stan prac: `docs/plan.md`.
+Backend MVP (M1–M11) jest gotowy: API dla uczestnika, instruktora i administratora. Panel WWW (`web/`) działa na prawdziwym API dla uczestnika (M12a); widoki instruktora i admina są jeszcze na danych przykładowych (M12b, M12c). Android to M13. Plan i stan prac: `docs/plan.md`.
 
 ## Wymagania
 - Docker z Docker Compose v2 — do uruchomienia całości.
@@ -11,10 +11,12 @@ Backend MVP (M1–M11) jest gotowy: API dla uczestnika, instruktora i administra
 ## Instalacja i uruchomienie (Docker Compose)
 ```bash
 cp .env.example .env              # uzupełnij POSTGRES_PASSWORD i JWT_SECRET_KEY
-docker compose up -d --build      # PostgreSQL 18 + backend; migracje uruchamiają się przy starcie
+docker compose up -d --build      # PostgreSQL 18 + backend + panel WWW; migracje uruchamiają się przy starcie
 curl localhost:8000/health        # {"status":"ok","database":"ok"}
+# panel WWW: http://localhost:8080
 ```
-Za proxy z własnym certyfikatem CA: `docker build --secret id=pip_ca,src=<plik CA> -t pspk-akademia-backend backend`, potem `docker compose up -d --no-build`.
+Porty zmienisz zmiennymi `WEB_PORT`, `API_PORT`, `DB_PORT` (domyślnie 8080, 8000, 5432).
+Za proxy z własnym certyfikatem CA: `docker build --secret id=pip_ca,src=<plik CA> -t pspk-akademia-backend backend` i `docker build --secret id=npm_ca,src=<plik CA> -t pspk-akademia-web web`, potem `docker compose up -d --no-build`.
 
 ## Migracje
 Schemat bazy powstaje wyłącznie z migracji Alembic. Kontener backendu wykonuje `alembic upgrade head` przy każdym starcie. Ręcznie:
@@ -61,6 +63,13 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 ```
 Nazwy testów wskazują wymaganie (`test_br02_...`, `test_fr_adm05_...`, `test_test10_...`).
 
+Testy panelu w przeglądarce (Playwright, telefon i komputer) na osobnym, jednorazowym stosie — Twoje lokalne dane nie są dotykane:
+```bash
+cd web && npm install
+npm run e2e            # E2E_BUILD=1 npm run e2e — najpierw zbuduje obrazy
+```
+Zrzuty ekranu trafiają do `web/e2e/screenshots/`.
+
 ## Swagger
 - `http://localhost:8000/docs` — interaktywna dokumentacja API,
 - `http://localhost:8000/openapi.json` — schemat OpenAPI.
@@ -99,7 +108,11 @@ backend/
     cli.py         create-admin
   alembic/         migracje
   tests/           testy (pytest, prawdziwy PostgreSQL)
-web/               makieta panelu WWW (React + TypeScript + Vite + Tailwind)
+web/
+  src/api/         klient API, sesja (token w pamięci, odświeżanie przez ciasteczko HttpOnly)
+  src/screens/     ekrany; uczestnik na API, instruktor i admin jeszcze na danych przykładowych (src/mock/)
+  e2e/             testy Playwright
+  nginx.conf       serwowanie panelu i przekazywanie /api do backendu
 docs/              wymagania, decyzje, kontrakt API, architektura, plan
 docker-compose.yml
 ```
@@ -107,11 +120,11 @@ docker-compose.yml
 ## Dokumentacja
 Kolejność czytania: `PSPK_Academy_specyfication_v1.txt` → `docs/open-questions.md` (decyzje) → `docs/business-rules.md` → `docs/database.md` → `docs/api.md` → `docs/architecture.md` → `docs/plan.md`. Proces pracy: `docs/sdd-process.md`.
 
-## Makieta panelu WWW
+## Panel WWW — praca nad kodem
 ```bash
 cd web
 npm install
-npm run dev          # http://localhost:5173
+npm run dev          # http://localhost:5173, /api przekazywane do backendu na :8000 (inny: API_URL=...)
 npm run build        # wersja produkcyjna w web/dist
 npm run build:single # jeden plik HTML (podgląd do akceptacji) w web/dist-single
 ```

@@ -17,7 +17,8 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import type { Photo, TaskStatus } from "../mock/data";
+import type { TaskStatus } from "../api/types";
+import type { Photo } from "../mock/data";
 import { taskStatus, type Tone } from "../lib/status";
 
 const cx = (...c: (string | false | undefined | null)[]) => c.filter(Boolean).join(" ");

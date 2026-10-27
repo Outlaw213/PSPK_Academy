@@ -91,11 +91,24 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] `test_audit.py`
 **DoD:** kryteria §29 „Audit”.
 
-## M11 — Domknięcie MVP backendu (STEP 17–18) ← JESTEŚMY TUTAJ
+## M11 — Domknięcie MVP backendu (STEP 17–18) ✔ zaakceptowane 2026-10-27
 - [x] Seed (`python -m app.seed`): admin, instruktor, uczestnik, osoba z kilkoma rolami, „Podstawy kowalstwa” wg Q-36 (lista `docs/assets/lista-zadan-sciezki.jpeg`, karty z `docs/assets/`) — `test_seed.py`
 - [x] README (§33), zgodność `/openapi.json` z `api.md` — `test_openapi.py`
 - [x] Pełna regresja, przejście checklisty §29 punkt po punkcie — `docs/acceptance-checklist.md`
 **DoD:** wszystkie kryteria §29 odhaczone na podstawie prawdziwych wyników testów.
+
+## M12a — Panel WWW: logowanie, sesja, uczestnik ← JESTEŚMY TUTAJ
+- [x] Warstwa API (token w pamięci, odświeżanie przez ciasteczko — ADR-26), polskie komunikaty błędów, pliki przez `blob:`
+- [x] Logowanie, rejestracja, zmiana hasła, wylogowanie; role z `/auth/me`
+- [x] Uczestnik: ścieżki, postęp, zadanie, szkic ze zdjęciami, wysyłka, wycofanie, quiz, historia (`GET /me/submissions`, FR-PAR-08, `test_participant_history.py`)
+- [x] Kontener `web` (nginx) w Docker Compose; testy Playwright (`web/e2e/`) na jednorazowym stosie z danymi startowymi; zrzuty ekranu dla PO
+**DoD:** uczestnik przechodzi pełny scenariusz w przeglądarce na prawdziwym API; statusy wyłącznie z backendu.
+
+## M12b — Panel WWW: instruktor
+- [ ] Kolejka, ocena ze zdjęciami (przejęcie, zwolnienie, zaliczenie, do poprawy), kursy, „Ocenione” (`GET /instructor/assessed`)
+
+## M12c — Panel WWW: admin
+- [ ] Użytkownicy, kreator ścieżek (wersje, etapy, zadania, quiz, pliki, kolejność), zapisy, uprawnienia, dziennik, zgłoszenia; usunięcie danych przykładowych
 
 ## M11a — Staging na Proxmoxie (ADR-23)
 - [ ] Wymaga: Proxmox VE 9 (Q-50), wolny RAM (Q-49), DNS `pspk.pl` w Cloudflare (Q-47), decyzja o kopiach (Q-46) — szczegóły w `docs/infrastructure.md`
@@ -105,6 +118,5 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 **DoD:** API stagingu dostępne z internetu po HTTPS, tylko dla zespołu; odtworzenie z kopii sprawdzone.
 
 ## Później (po akceptacji MVP backendu, STEP 19)
-- M12 — Panel WWW: React + TS (Q-30), podłączenie makiety do API, sesja wg ADR-26
 - M13 — Android (Kotlin) z kompresją zdjęć po stronie urządzenia (ADR-28)
 - Tematy z sekcji E w `open-questions.md`

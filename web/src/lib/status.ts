@@ -1,4 +1,4 @@
-import type { SubmissionStatus, TaskStatus, UserStatus } from "../mock/data";
+import type { SubmissionStatus, TaskStatus, UserStatus } from "../api/types";
 
 export type Tone = "ok" | "warn" | "bad" | "info" | "accent" | "brand" | "muted";
 
@@ -41,6 +41,3 @@ export const durationLong = (days: number) => {
 
 export const durationLabel = (days: number) =>
   days >= 7 ? `${days / 7} tyg.` : days === 1 ? "1 dzień" : `${days} dni`;
-
-/** Task label E{stage}.{position} (BR-34). In the app the backend sends it as `label`. */
-export const taskLabel = (stage: { position: number }, task: { position: number }) => `E${stage.position}.${task.position}`;

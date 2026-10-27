@@ -2,11 +2,11 @@
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.errors import AppError
-from app.models import Enrollment, LearningPath, PathVersion, Stage, Task, User
+from app.models import Enrollment, LearningPath, PathVersion, Stage, Submission, Task, User
 from app.schemas.enrollment import PathRef
 from app.schemas.participant import (
     MyPath,
@@ -21,7 +21,8 @@ from app.schemas.participant import (
     TaskItem,
     TaskItemWithStatus,
 )
-from app.services import content_service, task_service
+from app.schemas.submission import MySubmission, MySubmissionPage
+from app.services import content_service, instructor_service, task_service
 
 
 def not_found() -> AppError:
@@ -137,3 +138,21 @@ async def task_detail(session: AsyncSession, user: User, task_id: uuid.UUID) -> 
         # PublicRevision has no is_correct: the quiz key never reaches the participant (BR-32).
         revision=PublicRevision.model_validate(revision.model_dump()),
     )
+
+
+async def my_submissions(session: AsyncSession, user: User, limit: int, offset: int) -> MySubmissionPage:
+    """FR-PAR-08: every own attempt, from every enrollment, newest first; nothing is hidden (BR-04, BR-20)."""
+    stmt = select(Submission).where(Submission.user_id == user.id)
+    total = await session.scalar(select(func.count()).select_from(stmt.subquery()))
+    subs = (
+        (await session.execute(stmt.order_by(Submission.created_at.desc()).limit(limit).offset(offset))).scalars().all()
+    )
+    stage_ids = set(
+        (await session.execute(select(Task.stage_id).where(Task.id.in_([s.task_id for s in subs])))).scalars()
+    )
+    labels = await instructor_service._labels(session, stage_ids)
+    items = []
+    for sub in subs:
+        q = await instructor_service._item(session, sub, labels)  # same shape as the instructor queue item
+        items.append(MySubmission(submission=q.submission, task=q.task, stage=q.stage, path=q.path))
+    return MySubmissionPage(items=items, total=total or 0, limit=limit, offset=offset)

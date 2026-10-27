@@ -105,6 +105,7 @@ Jedna funkcja liczy statusy całej ścieżki stałą liczbą zapytań (bez N+1);
 - FR-PAR-05 Historia prób zadania i szczegóły zgłoszenia z oceną i rewizją zadania.
 - FR-PAR-06 Rozwiązanie quizu z natychmiastowym wynikiem (BR-32).
 - FR-PAR-07 Odczyt materiałów zadania: Markdown, PDF, linki do filmów (BR-33).
+- FR-PAR-08 Lista wszystkich własnych prób i wyników kursów ze wszystkich ścieżek, także po zakończeniu zapisu (BR-04, BR-20). Decyzja PO 2026-10-27 (M12).
 
 ### Instruktor
 - FR-INS-01 Kolejka: zgłoszenia `SUBMITTED` w zakresie uprawnień (bez własnych) + zgłoszenia przejęte przez siebie.

@@ -42,6 +42,11 @@
 | ADR-27 | **Panel WWW:** React 18 + TypeScript + Vite + Tailwind CSS, SPA serwowane statycznie (nginx w kontenerze), komunikacja tylko przez `/api/v1`. Język interfejsu polski (NFR-07). Design wg Apple HIG: typografia systemowa (SF / Inter), duże zaokrąglenia, materiał „szkła”, tryb jasny i ciemny, kolory PSPK jako tokeny CSS: granat `#263944` (akcent w jasnym), brąz `#A77A35` (marka; w ciemnym akcent `#D4A862`), tło `#F6F6F4` — z kart zadań PSPK (Q-55). | przyjęte |
 | ADR-28 | **Android** później, natywnie (Kotlin), kompresja zdjęć na urządzeniu przed wysłaniem (R9); backend i tak przetwarza wg ADR-25. | przyjęte |
 
+### Panel WWW w działaniu (M12)
+- Kontener `web`: nginx serwuje zbudowaną aplikację i przekazuje `/api` do backendu — jedna domena, więc bez CORS, a ciasteczko sesji (`SameSite=Strict`) działa. W trybie deweloperskim to samo robi proxy Vite.
+- Pliki z kontrolą dostępu (zdjęcia zgłoszeń, zdjęcia wzorcowe, PDF) panel pobiera przez `fetch` z tokenem i pokazuje jako `blob:` URL — `<img src>` nie wysyła nagłówka `Authorization`, a tokenu nie wolno dawać w adresie (trafiłby do logów).
+- Panel nie liczy statusów ani oznaczeń zadań: po każdej akcji pobiera stan z API.
+
 ## Odstępstwa od specyfikacji v1 (zatwierdzone decyzjami PO)
 
 | Spec. v1 | Teraz | Decyzja |

@@ -95,3 +95,17 @@ class CourseResultIn(AssessmentIn):
 
 class AssessedOut(BaseModel):
     submission: SubmissionOut
+
+
+class MySubmission(BaseModel):
+    submission: SubmissionOut
+    task: dict  # {id, label, name, task_type}; name/type of the revision the attempt was sent against
+    stage: dict
+    path: dict
+
+
+class MySubmissionPage(BaseModel):
+    items: list[MySubmission]
+    total: int
+    limit: int
+    offset: int

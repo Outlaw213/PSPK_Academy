@@ -37,6 +37,7 @@ Klient przeglądarkowy wysyła nagłówek `X-Client: web`. Wtedy `refresh_token`
 | POST | **[+]** /tasks/{task_id}/quiz-attempts | 201 submission + assessment z `score` (`answers: [{question_id, option_ids[]}]`) | 403 NO_ACTIVE_ENROLLMENT, 409 TASK_LOCKED, 409 TASK_ALREADY_PASSED, 409 TASK_NOT_QUIZ, 422 QUIZ_ANSWERS_INVALID |
 | GET | **[+]** /tasks/{task_id}/materials/{material_id} | 200 obraz `image/webp` (stream); dostęp jak przy załącznikach | 404 |
 | GET | /tasks/{task_id}/submissions | 200 historia prób (z ocenami) | 404 |
+| GET | **[+]** /me/submissions | 200 wszystkie własne próby ze wszystkich zapisów, także zakończonych; najnowsze najpierw; `{items[{submission, task{id, label, name, task_type}, stage, path}], total, limit, offset}` (FR-PAR-08) | |
 | POST | /tasks/{task_id}/submissions | 201 szkic `DRAFT` (JSON: `comment?`) | 403 NO_ACTIVE_ENROLLMENT, 409 TASK_LOCKED, 409 TASK_ALREADY_PASSED, 409 SUBMISSION_PENDING, 409 TASK_IS_COURSE, 409 TASK_IS_QUIZ |
 | GET | /submissions/{submission_id} | 200 zgłoszenie + zdjęcia + ocena + rewizja zadania | 404 |
 | PATCH | **[+]** /submissions/{id} | 200 (`comment`) — tylko `DRAFT` | 409 INVALID_STATE_TRANSITION |

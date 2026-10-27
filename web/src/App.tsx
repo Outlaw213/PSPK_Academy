@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, ClipboardCheck, GraduationCap, History, Inbox, KeyRound, LogOut, Moon, Route as RouteIcon, ScrollText, ShieldCheck, Sun, SunMoon, Users, type LucideIcon } from "lucide-react";
-import { me, myHistory, queue as queueSeed, stages as stagesSeed, users as usersSeed, type Role } from "./mock/data";
+import { myHistory, queue as queueSeed, stages as stagesSeed, users as usersSeed } from "./mock/data";
+import type { Role } from "./api/types";
+import { useSession } from "./api/session";
+import { errorText } from "./lib/errors";
 import { StoreContext, type Draft, type Route, type Store } from "./store";
-import { Button, Group, Row, Segmented, Sheet, Toast, cx } from "./components/ui";
+import { Button, Field, Group, inputClass, Row, Segmented, Sheet, Toast, cx } from "./components/ui";
 import { roleLabel } from "./lib/status";
 import { AuthScreen, Logo } from "./screens/auth";
-import { QuizScreen } from "./screens/quiz";
+import { QuizPreviewScreen, QuizScreen } from "./screens/quiz";
 import { DraftScreen, HistoryScreen, PathScreen, PathsScreen, SubmissionScreen, TaskScreen } from "./screens/participant";
 import { AssessedScreen, CourseScreen, CoursesScreen, QueueScreen, ReviewScreen } from "./screens/instructor";
 import { AdminPathsScreen, AuditScreen, EnrollmentsScreen, PermissionsScreen, UsersScreen } from "./screens/admin";
@@ -26,11 +29,11 @@ function render(r: Route) {
     case "paths":
       return <PathsScreen />;
     case "path":
-      return <PathScreen />;
+      return <PathScreen versionId={r.versionId} />;
     case "task":
       return <TaskScreen taskId={r.taskId} />;
     case "draft":
-      return <DraftScreen taskId={r.taskId} />;
+      return <DraftScreen taskId={r.taskId} submissionId={r.submissionId} />;
     case "history":
       return <HistoryScreen />;
     case "submission":
@@ -42,7 +45,7 @@ function render(r: Route) {
     case "review":
       return <ReviewScreen id={r.id} />;
     case "quiz":
-      return <QuizScreen taskId={r.taskId} preview={r.preview} />;
+      return r.preview ? <QuizPreviewScreen taskId={r.taskId} /> : <QuizScreen taskId={r.taskId} />;
     case "courses":
       return <CoursesScreen />;
     case "course":
@@ -72,9 +75,26 @@ function readTheme(): Theme {
   }
 }
 
+const roleName = (r: Role) => (r === "PARTICIPANT" ? "Uczestnik" : r === "INSTRUCTOR" ? "Instruktor" : "Admin");
+
 export default function App() {
-  const [authed, setAuthed] = useState(true);
-  const [role, setRole] = useState<Role>("PARTICIPANT");
+  const { user, logout } = useSession();
+  if (user === undefined)
+    return (
+      <div className="grid min-h-full place-items-center" aria-busy="true">
+        <Logo size={96} />
+      </div>
+    );
+  if (user === null) return <AuthScreen />;
+  // Remounting on a new user resets navigation and the role view.
+  return <Panel key={user.id} logout={logout} />;
+}
+
+function Panel({ logout }: { logout: () => Promise<void> }) {
+  const { user } = useSession();
+  const me = { firstName: user!.first_name, lastName: user!.last_name, email: user!.email, roles: user!.roles };
+  const [role, setRole] = useState<Role>(me.roles[0]);
+  const [changePw, setChangePw] = useState(false);
   const [stages, setStagesRaw] = useState(stagesSeed);
   const [history, setHistoryRaw] = useState(myHistory);
   const [queue, setQueueRaw] = useState(queueSeed);
@@ -177,16 +197,6 @@ export default function App() {
     scrollTop();
   };
 
-  if (!authed)
-    return (
-      <AuthScreen
-        onLogin={() => {
-          setAuthed(true);
-          toast("Zalogowano");
-        }}
-      />
-    );
-
   const initials = me.firstName[0] + me.lastName[0];
   const avatar = (
     <button type="button" onClick={() => setAccount(true)} aria-label="Konto i ustawienia" className="focus-ring grid size-11 place-items-center rounded-full">
@@ -206,12 +216,9 @@ export default function App() {
               <div className="text-footnote text-fg-2">PSPK</div>
             </div>
           </div>
-          <Segmented
-            label="Widok roli"
-            value={role}
-            onChange={setRole}
-            options={me.roles.map((r) => ({ value: r, label: r === "PARTICIPANT" ? "Uczestnik" : r === "INSTRUCTOR" ? "Instruktor" : "Admin" }))}
-          />
+          {me.roles.length > 1 && (
+            <Segmented label="Widok roli" value={role} onChange={setRole} options={me.roles.map((r) => ({ value: r, label: roleName(r) }))} />
+          )}
           <nav aria-label="Sekcje" className="flex flex-col gap-1">
             {tabs[role].map((t) => (
               <button
@@ -244,6 +251,11 @@ export default function App() {
         <div className="relative min-w-0 flex-1">
           {/* Account button for phones, floating at the top right of every screen */}
           <div className="fixed right-[max(8px,env(safe-area-inset-right,0px))] top-[calc(env(safe-area-inset-top,0px)+4px)] z-30 lg:hidden">{avatar}</div>
+          {role !== "PARTICIPANT" && (
+            <p className="mx-auto mt-[calc(env(safe-area-inset-top,0px)+8px)] w-fit rounded-full bg-warn/14 px-3 py-1 text-footnote font-semibold text-warn lg:mt-3">
+              Dane przykładowe — ten widok zostanie podłączony do systemu w kolejnym etapie
+            </p>
+          )}
           <div key={tabId + stack.length}>{render(route)}</div>
         </div>
       </div>
@@ -281,16 +293,18 @@ export default function App() {
               <div className="truncate text-subhead text-fg-2">{me.email}</div>
             </div>
           </div>
-          <Group title="Widok" footer="Masz kilka ról. W aplikacji przełączasz się między nimi tutaj.">
-            <div className="p-3">
-              <Segmented
-                label="Widok roli"
-                value={role}
-                onChange={(r) => (setRole(r), setAccount(false))}
-                options={me.roles.map((r) => ({ value: r, label: r === "PARTICIPANT" ? "Uczestnik" : r === "INSTRUCTOR" ? "Instruktor" : "Admin" }))}
-              />
-            </div>
-          </Group>
+          {me.roles.length > 1 && (
+            <Group title="Widok" footer="Masz kilka ról. W aplikacji przełączasz się między nimi tutaj.">
+              <div className="p-3">
+                <Segmented
+                  label="Widok roli"
+                  value={role}
+                  onChange={(r) => (setRole(r), setAccount(false))}
+                  options={me.roles.map((r) => ({ value: r, label: roleName(r) }))}
+                />
+              </div>
+            </Group>
+          )}
           <Group title="Wygląd">
             <div className="p-3">
               <Segmented
@@ -306,7 +320,7 @@ export default function App() {
             </div>
           </Group>
           <Group>
-            <Row leading={<KeyRound size={20} className="text-fg-2" aria-hidden />} onClick={() => (setAccount(false), toast("Zmiana hasła — w M3"))}>
+            <Row leading={<KeyRound size={20} className="text-fg-2" aria-hidden />} onClick={() => (setAccount(false), setChangePw(true))}>
               <span className="text-body">Zmień hasło</span>
             </Row>
             <Row
@@ -314,7 +328,7 @@ export default function App() {
               leading={<LogOut size={20} className="text-bad" aria-hidden />}
               onClick={() => {
                 setAccount(false);
-                setAuthed(false);
+                void logout();
               }}
             >
               <span className="text-body text-bad">Wyloguj się</span>
@@ -322,7 +336,7 @@ export default function App() {
           </Group>
           <p className="flex items-center justify-center gap-2 text-center text-footnote text-fg-3">
             {theme === "dark" ? <Moon size={14} /> : theme === "light" ? <Sun size={14} /> : <SunMoon size={14} />}
-            Makieta PSPK Akademia · dane przykładowe
+            PSPK Akademia
           </p>
           <Button variant="plain" onClick={() => setAccount(false)}>
             Gotowe
@@ -330,7 +344,62 @@ export default function App() {
         </div>
       </Sheet>
 
+      <ChangePasswordSheet
+        open={changePw}
+        onClose={() => setChangePw(false)}
+        onDone={() => {
+          setChangePw(false);
+          toast("Hasło zmienione. Inne urządzenia zostały wylogowane.");
+        }}
+      />
       <Toast message={toastMsg} />
     </StoreContext.Provider>
+  );
+}
+
+function ChangePasswordSheet({ open, onClose, onDone }: { open: boolean; onClose: () => void; onDone: () => void }) {
+  const { changePassword } = useSession();
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const short = next.length > 0 && next.length < 10;
+  const close = () => (setCurrent(""), setNext(""), setError(null), onClose());
+  const save = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await changePassword(current, next);
+      setCurrent("");
+      setNext("");
+      onDone();
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Sheet open={open} title="Zmień hasło" onClose={close}>
+      <div className="flex flex-col gap-4">
+        <Field label="Obecne hasło">
+          {(id) => <input id={id} type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} className={inputClass + " bg-bg-2"} />}
+        </Field>
+        <Field label="Nowe hasło" hint="Co najmniej 10 znaków" error={short ? "Hasło musi mieć co najmniej 10 znaków." : undefined}>
+          {(id) => <input id={id} type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} className={inputClass + " bg-bg-2"} />}
+        </Field>
+        {error && (
+          <p className="rounded-ctl bg-bad/8 px-4 py-3 text-subhead text-bad" role="alert">
+            {error}
+          </p>
+        )}
+        <Button size="lg" disabled={busy || !current || next.length < 10} onClick={save}>
+          Zmień hasło
+        </Button>
+        <Button variant="plain" onClick={close}>
+          Anuluj
+        </Button>
+      </div>
+    </Sheet>
   );
 }

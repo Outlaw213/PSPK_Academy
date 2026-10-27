@@ -1,13 +1,13 @@
 import { createContext, useContext } from "react";
 import type { AdminUser, Stage, Submission } from "./mock/data";
-import { taskLabel } from "./lib/status";
+// Sample-data store for the screens not yet connected to the API (instructor: M12b, admin: M12c).
 
 export type Route =
   | { name: "paths" }
-  | { name: "path" }
+  | { name: "path"; versionId: string }
   | { name: "task"; taskId: string }
-  | { name: "draft"; taskId: string }
-  | { name: "history"; taskId?: string }
+  | { name: "draft"; taskId: string; submissionId: string }
+  | { name: "history" }
   | { name: "submission"; id: string }
   | { name: "queue" }
   | { name: "assessed" }
@@ -53,6 +53,9 @@ export function useStore() {
   if (!s) throw new Error("StoreContext missing");
   return s;
 }
+
+/** Mock only: in the connected panel the label always comes from the API (BR-34). */
+export const taskLabel = (stage: { position: number }, task: { position: number }) => `E${stage.position}.${task.position}`;
 
 export const allTasks = (stages: Stage[]) => stages.flatMap((s) => s.tasks.map((t) => ({ ...t, stage: s, label: taskLabel(s, t) })));
 

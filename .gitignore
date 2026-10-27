@@ -19,3 +19,8 @@ storage/
 .DS_Store
 dist-single/
 *.tsbuildinfo
+
+# Playwright
+test-results/
+playwright-report/
+web/e2e/screenshots/

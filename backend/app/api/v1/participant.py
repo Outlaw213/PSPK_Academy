@@ -3,7 +3,7 @@
 import uuid
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, Query, Request, Response, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
@@ -12,6 +12,7 @@ from app.schemas.participant import MyPath, PathProgress, PathStructure, TaskDet
 from app.schemas.submission import (
     CommentIn,
     DraftIn,
+    MySubmissionPage,
     PhotoOut,
     QuizAttemptIn,
     QuizResult,
@@ -36,6 +37,16 @@ async def me(p: CurrentUser = Participant, s: AsyncSession = Session):
 @router.get("/me/paths", response_model=list[MyPath])
 async def my_paths(p: CurrentUser = Participant, s: AsyncSession = Session):
     return await svc.my_paths(s, p.user)
+
+
+@router.get("/me/submissions", response_model=MySubmissionPage, summary="Wszystkie moje próby")
+async def my_submissions(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    p: CurrentUser = Participant,
+    s: AsyncSession = Session,
+):
+    return await svc.my_submissions(s, p.user, limit, offset)
 
 
 @router.get("/me/paths/{path_version_id}", response_model=PathStructure)

@@ -1,7 +1,10 @@
-import { useState, type FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { Hourglass } from "lucide-react";
 import { Button, Field, inputClass, Segmented } from "../components/ui";
 import logoUrl from "../assets/logo-pspk.png";
+import { post } from "../api/client";
+import { useSession } from "../api/session";
+import { errorText } from "../lib/errors";
 
 export function Logo({ size = 56 }: { size?: number }) {
   // Black-on-white PSPK seal: kept on a light disc in both themes instead of being inverted.
@@ -12,18 +15,34 @@ export function Logo({ size = 56 }: { size?: number }) {
   );
 }
 
-export function AuthScreen({ onLogin }: { onLogin: () => void }) {
+export function AuthScreen() {
+  const { login } = useSession();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [pending, setPending] = useState(false);
-  const [pw, setPw] = useState("");
+  const [form, setForm] = useState({ email: "", password: "", first_name: "", last_name: "" });
   const [tried, setTried] = useState(false);
-  const pwShort = mode === "register" && pw.length < 10;
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const pwShort = mode === "register" && form.password.length < 10;
+  const set = (k: keyof typeof form) => (e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     setTried(true);
-    if (mode === "login") return onLogin();
-    if (!pwShort) setPending(true);
+    setError(null);
+    if (mode === "register" && (pwShort || !form.first_name.trim() || !form.last_name.trim())) return;
+    setBusy(true);
+    try {
+      if (mode === "login") await login(form.email.trim(), form.password);
+      else {
+        await post("/auth/register", { ...form, email: form.email.trim() });
+        setPending(true);
+      }
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -38,13 +57,13 @@ export function AuthScreen({ onLogin }: { onLogin: () => void }) {
         </div>
 
         {pending ? (
-          <div className="flex w-full flex-col items-center gap-3 rounded-card bg-bg-2 p-6 text-center">
+          <div className="flex w-full flex-col items-center gap-3 rounded-card bg-bg-2 p-6 text-center" role="status">
             <span className="grid size-12 place-items-center rounded-full bg-warn/14 text-warn">
               <Hourglass size={22} aria-hidden />
             </span>
             <h2 className="text-headline">Konto czeka na akceptację</h2>
             <p className="text-subhead text-fg-2">Administrator PSPK sprawdzi zgłoszenie. Zalogujesz się, gdy konto zostanie zatwierdzone.</p>
-            <Button variant="plain" onClick={() => (setPending(false), setMode("login"))}>
+            <Button variant="plain" onClick={() => (setPending(false), setMode("login"), setForm({ ...form, password: "" }))}>
               Wróć do logowania
             </Button>
           </div>
@@ -53,7 +72,7 @@ export function AuthScreen({ onLogin }: { onLogin: () => void }) {
             <Segmented
               label="Logowanie lub rejestracja"
               value={mode}
-              onChange={(m) => (setMode(m), setTried(false))}
+              onChange={(m) => (setMode(m), setTried(false), setError(null))}
               options={[
                 { value: "login", label: "Zaloguj się" },
                 { value: "register", label: "Załóż konto" },
@@ -61,12 +80,16 @@ export function AuthScreen({ onLogin }: { onLogin: () => void }) {
             />
             {mode === "register" && (
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Imię">{(id) => <input id={id} autoComplete="given-name" className={inputClass + " bg-bg-2"} />}</Field>
-                <Field label="Nazwisko">{(id) => <input id={id} autoComplete="family-name" className={inputClass + " bg-bg-2"} />}</Field>
+                <Field label="Imię" error={tried && !form.first_name.trim() ? "Podaj imię." : undefined}>
+                  {(id) => <input id={id} autoComplete="given-name" value={form.first_name} onChange={set("first_name")} className={inputClass + " bg-bg-2"} />}
+                </Field>
+                <Field label="Nazwisko" error={tried && !form.last_name.trim() ? "Podaj nazwisko." : undefined}>
+                  {(id) => <input id={id} autoComplete="family-name" value={form.last_name} onChange={set("last_name")} className={inputClass + " bg-bg-2"} />}
+                </Field>
               </div>
             )}
             <Field label="E-mail">
-              {(id) => <input id={id} type="email" autoComplete="email" defaultValue="jan.kowalski@example.pl" className={inputClass + " bg-bg-2"} />}
+              {(id) => <input id={id} type="email" autoComplete="email" value={form.email} onChange={set("email")} className={inputClass + " bg-bg-2"} />}
             </Field>
             <Field label="Hasło" hint={mode === "register" ? "Co najmniej 10 znaków" : undefined} error={tried && pwShort ? "Hasło musi mieć co najmniej 10 znaków." : undefined}>
               {(id) => (
@@ -74,17 +97,21 @@ export function AuthScreen({ onLogin }: { onLogin: () => void }) {
                   id={id}
                   type="password"
                   autoComplete={mode === "login" ? "current-password" : "new-password"}
-                  value={pw}
+                  value={form.password}
                   aria-invalid={tried && pwShort}
-                  onChange={(e) => setPw(e.target.value)}
+                  onChange={set("password")}
                   className={inputClass + " bg-bg-2"}
                 />
               )}
             </Field>
-            <Button type="submit" size="lg" className="mt-2">
+            {error && (
+              <p className="rounded-ctl bg-bad/8 px-4 py-3 text-subhead text-bad" role="alert">
+                {error}
+              </p>
+            )}
+            <Button type="submit" size="lg" className="mt-2" disabled={busy}>
               {mode === "login" ? "Zaloguj się" : "Załóż konto"}
             </Button>
-            <p className="text-center text-footnote text-fg-3">Makieta: dowolne dane logują na konto przykładowe.</p>
           </form>
         )}
       </div>
