@@ -1,4 +1,8 @@
 from fastapi import APIRouter
 
-# All business endpoints from docs/api.md are mounted here, from M3 on.
+from app.api.v1 import admin_users, auth
+
+# Business endpoints from docs/api.md.
 router = APIRouter(prefix="/api/v1")
+router.include_router(auth.router)
+router.include_router(admin_users.router)

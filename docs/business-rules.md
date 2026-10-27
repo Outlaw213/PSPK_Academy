@@ -84,9 +84,10 @@ Jedna funkcja liczy statusy całej ścieżki stałą liczbą zapytań (bez N+1);
 - FR-AUTH-05 Konto inne niż `ACTIVE` nie używa ważnego tokenu → 403 `ACCOUNT_INACTIVE`.
 - FR-AUTH-06 Dependencies: `require_authenticated_user`, `require_role`, `require_admin`, `require_instructor`, `require_participant` (sprawdzają przynależność roli do zbioru ról użytkownika).
 - FR-AUTH-07 Zmiana własnego hasła (podanie obecnego); unieważnia pozostałe sesje. (Q-38)
+- FR-AUTH-08 Pierwszy administrator: `python -m app.cli create-admin --email …` zakłada konto `ACTIVE` z rolą `ADMIN`. Hasło podawane w prompcie, nigdy jako argument ani w logu. Istniejący e-mail → błąd. (Q-65)
 
 ### Admin
-- FR-ADM-01 Użytkownicy: lista z filtrami (w tym `PENDING_APPROVAL`), utworzenie (od razu `ACTIVE`, z rolami), edycja danych i ról, dezaktywacja/reaktywacja, zatwierdzenie/odrzucenie rejestracji, ustawienie nowego hasła (unieważnia sesje). Bez usuwania kont.
+- FR-ADM-01 Użytkownicy: lista z filtrami (w tym `PENDING_APPROVAL`), utworzenie (od razu `ACTIVE`, z rolami), edycja danych i ról, dezaktywacja/reaktywacja, zatwierdzenie/odrzucenie rejestracji, ustawienie nowego hasła (unieważnia sesje). Bez usuwania kont. Admin nie może dezaktywować siebie ani odebrać sobie roli ADMIN (409 `CANNOT_MODIFY_SELF`).
 - FR-ADM-02 Ścieżki, wersje (pusta lub kopia — BR-24, Q-07; aktywacja/dezaktywacja zapisów), etapy, zadania wszystkich typów (praca własna, kurs, teoria, quiz; każda edycja = nowa rewizja), przenoszenie zadania między etapami, pytania quizu i próg, materiały (Markdown, PDF, filmy — BR-33), zdjęcia wzorcowe, zmiana kolejności, wyłączanie/włączanie zadań (BR-20).
 - FR-ADM-03 Zapisy: utworzenie (`PATH_ASSIGNED`), lista z filtrami, anulowanie (BR-29).
 - FR-ADM-04 Uprawnienia instruktorów: nadanie (wersja lub etap), lista, odebranie (BR-26 — automatyczne zwolnienie).

@@ -7,3 +7,7 @@ select = ["E", "F", "I", "B", "UP", "ARG"]
 [lint.per-file-ignores]
 # pytest fixtures are requested by argument name even when the body doesn't use them.
 "tests/*" = ["ARG001"]
+
+[lint.flake8-bugbear]
+# FastAPI declares dependencies and parameters as argument defaults.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]

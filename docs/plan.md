@@ -33,18 +33,19 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] pytest + conftest z bazą testową
 **DoD:** `docker compose up` startuje usługi, `/health` = 200 (sprawdza DB), `/docs` działa, test dymny zielony.
 
-## M2 — Modele i migracja 0001 (STEP 6–7) ← GOTOWE, CZEKA NA AKCEPTACJĘ
+## M2 — Modele i migracja 0001 (STEP 6–7) ✔ zaakceptowane 2026-10-27
 - [x] Wszystkie modele z `database.md` (21 tabel, w tym quiz, załączniki, kursy — `backend/app/models/`)
 - [x] Migracja 0001, indeksy częściowe, checki, DEFERRABLE, złożony FK zapis↔wersja
 - [x] Testy ograniczeń DB (unikalności, jedna otwarta próba, jedno PASSED, limit pozycji zdjęć, brak samooceny, kursy, quiz, załączniki) + upgrade/downgrade + `alembic check`
 - [x] Backend w Dockerze migruje bazę przy starcie (`alembic upgrade head`)
 **DoD:** `alembic upgrade head` i `downgrade base` przechodzą na czystej bazie.
 
-## M3 — Uwierzytelnianie i konta (STEP 8)
-- [ ] register (`PENDING_APPROVAL`) / login / refresh / logout / me / change-password, Argon2id, JWT
-- [ ] wiele ról, dependencies `require_*`
-- [ ] admin: użytkownicy, zatwierdzanie/odrzucanie, ustawienie hasła, dezaktywacja
-- [ ] `test_auth.py`: FR-AUTH-01..07, BR-27, BR-28
+## M3 — Uwierzytelnianie i konta (STEP 8) ← GOTOWE, CZEKA NA AKCEPTACJĘ
+- [x] register (`PENDING_APPROVAL`) / login / refresh / logout / me / change-password, Argon2id, JWT; ciasteczko dla przeglądarki (ADR-26)
+- [x] wiele ról, dependencies `require_*`
+- [x] admin: użytkownicy, zatwierdzanie/odrzucanie, ustawienie hasła, dezaktywacja; automatyczne zwolnienie zgłoszeń (BR-26)
+- [x] `python -m app.cli create-admin` (FR-AUTH-08)
+- [x] `test_auth.py`, `test_admin_users.py`, `test_cli.py`: FR-AUTH-01..08, FR-ADM-01, BR-26, BR-27, BR-28
 **DoD:** kryteria §29 „Authentication”.
 
 ## M4 — Treść edukacyjna, rewizje i wersje (STEP 9)

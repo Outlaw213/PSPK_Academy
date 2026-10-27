@@ -18,8 +18,12 @@ Role sprawdzane jako przynależność do zbioru ról użytkownika (BR-27).
 | POST | /auth/login | 200 tokens | 401 INVALID_CREDENTIALS, 403 ACCOUNT_PENDING_APPROVAL, 403 ACCOUNT_INACTIVE |
 | POST | /auth/refresh | 200 tokens | 401 INVALID_TOKEN, 403 ACCOUNT_INACTIVE |
 | POST | **[+]** /auth/logout | 204 | — |
-| POST | **[+]** /auth/change-password | 204 (`current_password`, `new_password`) | 401 INVALID_CREDENTIALS, 422 |
+| POST | **[+]** /auth/change-password | 200 nowy `access_token` dla bieżącej sesji (`current_password`, `new_password`); pozostałe sesje unieważnione (Q-38) | 401 INVALID_CREDENTIALS, 422 |
 | GET | /auth/me | 200 user + `roles[]` | 401 |
+
+**Tokeny** (ADR-09, ADR-19, ADR-26). `login` i `refresh` zwracają `{access_token, token_type: "bearer", expires_in, refresh_token}`.
+Klient przeglądarkowy wysyła nagłówek `X-Client: web`. Wtedy `refresh_token` nie trafia do ciała odpowiedzi, tylko do ciasteczka `pspk_refresh` (`HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth`).
+`refresh` i `logout` przyjmują token z ciała (`{"refresh_token": "…"}`) albo z tego ciasteczka. Każde odświeżenie wydaje nowy refresh token i zużywa poprzedni. Ponowne użycie zużytego tokenu unieważnia całą sesję (rodzinę) → 401 INVALID_TOKEN.
 
 ### Uczestnik (`PARTICIPANT`)
 | Metoda | Ścieżka | Wynik | Błędy |
@@ -57,7 +61,7 @@ Role sprawdzane jako przynależność do zbioru ról użytkownika (BR-27).
 ### Admin (`ADMIN`)
 | Metoda | Ścieżka | Uwagi |
 |---|---|---|
-| GET / POST | /admin/users | lista z filtrami (`status`, `role`, wyszukiwanie); utworzenie: od razu `ACTIVE`, z rolami |
+| GET / POST | /admin/users | lista z filtrami (`status`, `role`, `q` — e-mail lub imię i nazwisko), odpowiedź `{items, total, limit, offset}`; utworzenie: od razu `ACTIVE`, z rolami |
 | PUT | /admin/users/{user_id} | dane, role, `status` (`ACTIVE`/`DEACTIVATED`); dezaktywacja/odebranie roli INSTRUCTOR → automatyczny release (BR-26) |
 | POST | **[+]** /admin/users/{user_id}/approve, /reject | tylko z `PENDING_APPROVAL` → 409 INVALID_STATE_TRANSITION |
 | POST | **[+]** /admin/users/{user_id}/password | nowe hasło; unieważnia sesje użytkownika |
@@ -95,6 +99,7 @@ Listy są stronicowane (`limit`, `offset`).
 | FORBIDDEN | 403 | brak wymaganej roli |
 | NOT_FOUND | 404 | brak zasobu lub poza zakresem |
 | EMAIL_ALREADY_EXISTS | 409 | |
+| CANNOT_MODIFY_SELF | 409 | admin próbuje dezaktywować siebie albo odebrać sobie rolę ADMIN (zabezpieczenie przed odcięciem dostępu) |
 | NO_ACTIVE_ENROLLMENT | 403 | |
 | TASK_LOCKED | 409 | poprzednie zadanie niezaliczone |
 | TASK_ALREADY_PASSED | 409 | |

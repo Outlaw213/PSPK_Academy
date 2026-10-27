@@ -25,7 +25,7 @@ async def make_client():
     def _make(app: FastAPI | None = None, **overrides) -> AsyncClient:
         app = app or create_app(Settings(**overrides) if overrides else None)
         apps.append(app)
-        client = AsyncClient(transport=ASGITransport(app=app, raise_app_exceptions=False), base_url="http://test")
+        client = AsyncClient(transport=ASGITransport(app=app, raise_app_exceptions=False), base_url="https://test")
         clients.append(client)
         return client
 
@@ -83,3 +83,65 @@ async def db(migrated_db) -> AsyncSession:
             await session.close()
             await trans.rollback()
     await engine.dispose()
+
+
+# --- API fixtures (M3) ------------------------------------------------------
+# API tests go through the app's own sessions, so their data must be committed.
+# Every API test starts from empty tables instead of a rolled-back transaction.
+
+from sqlalchemy.ext.asyncio import async_sessionmaker  # noqa: E402
+
+from app.models import Base, User, UserRole  # noqa: E402
+from app.utils.security import hash_password  # noqa: E402
+
+PASSWORD = "kowadlo-i-mlot-2026"
+
+
+@pytest.fixture
+async def committed(migrated_db):
+    """Sessionmaker writing committed rows; truncates every table before the test."""
+    engine = create_async_engine(os.environ["DATABASE_URL"])
+    tables = ", ".join(t.name for t in Base.metadata.sorted_tables)
+    async with engine.begin() as conn:
+        await conn.execute(text(f"TRUNCATE {tables} CASCADE"))
+    yield async_sessionmaker(engine, expire_on_commit=False)
+    await engine.dispose()
+
+
+@pytest.fixture
+async def api(committed, make_client) -> AsyncClient:
+    return make_client()
+
+
+@pytest.fixture
+def make_user(committed):
+    async def _make(
+        email: str, *roles: str, status: str = "ACTIVE", password: str = PASSWORD, first_name: str = "Jan"
+    ) -> User:
+        async with committed() as s, s.begin():
+            u = User(
+                email=email,
+                password_hash=hash_password(password),
+                first_name=first_name,
+                last_name="Kowalski",
+                status=status,
+            )
+            s.add(u)
+            await s.flush()
+            for r in roles or ("PARTICIPANT",):
+                s.add(UserRole(user_id=u.id, role=r))
+        return u
+
+    return _make
+
+
+async def login(client: AsyncClient, email: str, password: str = PASSWORD, web: bool = False) -> dict:
+    r = await client.post(
+        "/api/v1/auth/login", json={"email": email, "password": password}, headers={"X-Client": "web"} if web else {}
+    )
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def bearer(tokens: dict) -> dict:
+    return {"Authorization": f"Bearer {tokens['access_token']}"}

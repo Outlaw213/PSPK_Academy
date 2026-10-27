@@ -8,6 +8,7 @@
 |---|---|---|
 | Q-36a | Treść kart dla pozostałych zadań (dostarczone: Haczyk / zawieszka, Serce). Kursy: czy mają karty i jakie kryteria zaliczenia. | seed M11 |
 | Q-59 | Logo w wektorze (SVG) — obecny PNG 465 px wystarcza na ekran, do druku i dużych rozmiarów lepszy wektor. | nie blokuje |
+| Q-66 | Ochrona logowania przed zgadywaniem haseł (limit prób na IP/e-mail). Proponuję przed publikacją w internecie: Cloudflare (ADR-23) + prosty limit w backendzie. | M11a |
 | Q-46 | Kopie zapasowe: gdzie i jak często (baza + dysk zdjęć). | M11a |
 | Q-47 | DNS `pspk.pl` w Cloudflare. | M11a |
 | Q-48 | Kto ma dostęp do stagingu (Cloudflare Access — lista e-maili). | M11a |
@@ -64,3 +65,4 @@
 | Q-63 | **Ścieżki układa admin:** kolejność etapów i zadań, treść, typ każdego zadania; może dodawać zadania teoretyczne i quizy do dowolnego etapu (FR-ADM-02). Program z listy (Q-36) to tylko dane startowe (seed). | 2026-10-26 |
 | Q-58 | **Pisownia nazw z listy** potwierdzona: „Zestaw sztućców”, „Zgrzewanie kowalskie”, „Hidden Tang”, „Gwóźdź”, „Topór”. | 2026-10-26 |
 | Q-64 | **Oznaczenie zadania `E{etap}.{pozycja}`** (np. E1.2; E2.1 = pierwsze zadanie Etapu 2), wspólne dla wszystkich typów; typ pokazywany osobno. Przelicza się automatycznie przy zmianie kolejności (BR-34). Zastępuje „PRACA WŁASNA 02” z kart. | 2026-10-26 |
+| Q-65 | **Decyzja techniczna M3:** hasła Argon2id (argon2-cffi), tokeny JWT HS256 (PyJWT); pierwszy admin z komendy `create-admin` (FR-AUTH-08). Limit prób logowania poza MVP — do rozważenia przed publikacją (Q-66). | 2026-10-27 |
