@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, ClipboardCheck, GraduationCap, History, Inbox, KeyRound, LogOut, Moon, Route as RouteIcon, ScrollText, ShieldCheck, Sun, SunMoon, Users, type LucideIcon } from "lucide-react";
-import { stages as stagesSeed } from "./mock/data";
 import type { AdminUser, Page, QueueItem, Role } from "./api/types";
 import { get } from "./api/client";
 import { useApi } from "./lib/useApi";
@@ -10,7 +9,7 @@ import { StoreContext, type Route, type Store } from "./store";
 import { Button, Field, Group, inputClass, Row, Segmented, Sheet, Toast, cx } from "./components/ui";
 import { roleLabel } from "./lib/status";
 import { AuthScreen, Logo } from "./screens/auth";
-import { QuizPreviewScreen, QuizScreen } from "./screens/quiz";
+import { QuizScreen } from "./screens/quiz";
 import { DraftScreen, HistoryScreen, PathScreen, PathsScreen, SubmissionScreen, TaskScreen } from "./screens/participant";
 import { AssessedScreen, CourseScreen, CoursesScreen, QueueScreen, ReviewScreen } from "./screens/instructor";
 import { AdminPathsScreen, AdminSubmissionScreen, AuditScreen, EnrollmentsScreen, PermissionsScreen, UsersScreen } from "./screens/admin";
@@ -47,7 +46,7 @@ function render(r: Route) {
     case "review":
       return <ReviewScreen id={r.id} />;
     case "quiz":
-      return r.preview ? <QuizPreviewScreen taskId={r.taskId} /> : <QuizScreen taskId={r.taskId} />;
+      return <QuizScreen taskId={r.taskId} />;
     case "courses":
       return <CoursesScreen />;
     case "course":
@@ -57,9 +56,11 @@ function render(r: Route) {
     case "admin-paths":
       return <AdminPathsScreen />;
     case "version":
-      return <VersionScreen />;
+      return <VersionScreen versionId={r.versionId} />;
     case "task-edit":
       return <TaskEditScreen taskId={r.taskId} />;
+    case "task-new":
+      return <TaskEditScreen stageId={r.stageId} type={r.type} title={r.title} />;
     case "enrollments":
       return <EnrollmentsScreen />;
     case "permissions":
@@ -78,9 +79,6 @@ function readTheme(): Theme {
     return "system";
   }
 }
-
-// Screens still on sample data until the path builder is connected (M12c2).
-const SAMPLE_DATA = new Set<Route["name"]>(["admin-paths", "version", "task-edit"]);
 
 const roleName = (r: Role) => (r === "PARTICIPANT" ? "Uczestnik" : r === "INSTRUCTOR" ? "Instruktor" : "Admin");
 
@@ -102,7 +100,6 @@ function Panel({ logout }: { logout: () => Promise<void> }) {
   const me = { firstName: user!.first_name, lastName: user!.last_name, email: user!.email, roles: user!.roles };
   const [role, setRole] = useState<Role>(me.roles[0]);
   const [changePw, setChangePw] = useState(false);
-  const [stages, setStagesRaw] = useState(stagesSeed);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [account, setAccount] = useState(false);
   const [theme, setTheme] = useState<Theme>(readTheme);
@@ -192,13 +189,11 @@ function Panel({ logout }: { logout: () => Promise<void> }) {
 
   const store: Store = useMemo(
     () => ({
-      stages,
-      setStages: setStagesRaw,
       toast,
       push,
       pop,
     }),
-    [stages, toast, push, pop],
+    [toast, push, pop],
   );
 
   const selectTab = (id: string) => {
@@ -261,11 +256,6 @@ function Panel({ logout }: { logout: () => Promise<void> }) {
         <div className="relative min-w-0 flex-1">
           {/* Account button for phones, floating at the top right of every screen */}
           <div className="fixed right-[max(8px,env(safe-area-inset-right,0px))] top-[calc(env(safe-area-inset-top,0px)+4px)] z-30 lg:hidden">{avatar}</div>
-          {(SAMPLE_DATA.has(route.name) || (route.name === "quiz" && route.preview)) && (
-            <p className="mx-auto mt-[calc(env(safe-area-inset-top,0px)+8px)] w-fit rounded-full bg-warn/14 px-3 py-1 text-footnote font-semibold text-warn lg:mt-3">
-              Dane przykładowe — ten widok zostanie podłączony do systemu w kolejnym etapie
-            </p>
-          )}
           <div key={tabId + stack.length}>{render(route)}</div>
         </div>
       </div>

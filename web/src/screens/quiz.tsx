@@ -2,10 +2,9 @@ import { useState } from "react";
 import { Check, RotateCcw, X } from "lucide-react";
 import { Screen } from "../components/screen";
 import { Button, cx } from "../components/ui";
-import { allTasks, useStore } from "../store";
+import { useStore, type QuizDraft } from "../store";
 import { get, post } from "../api/client";
 import type { QuizResult, TaskDetail } from "../api/types";
-import type { QuizQuestion } from "../mock/data";
 import { errorText } from "../lib/errors";
 import { useApi } from "../lib/useApi";
 import { Loading } from "./participant";
@@ -184,28 +183,33 @@ export function QuizScreen({ taskId }: { taskId: string }) {
   );
 }
 
-/** Admin's preview in the task builder, still on sample data until the builder is connected (M12c). Nothing is saved. */
-export function QuizPreviewScreen({ taskId }: { taskId: string }) {
-  const { stages, pop } = useStore();
-  const t = allTasks(stages).find((x) => x.id === taskId)!;
-  const quiz = t.quiz!;
+/** Admin's preview of a quiz being edited in the builder: graded here, on unsaved questions; nothing is saved.
+ * Participants are always graded by the backend (BR-32). */
+export function QuizPreviewScreen({ quiz, onBack }: { quiz: QuizDraft; onBack: () => void }) {
+  const questions: Question[] = quiz.questions.map((q, n) => ({
+    id: `q${n}`,
+    text: q.text,
+    kind: q.kind,
+    options: q.options.map((o, m) => ({ id: `q${n}o${m}`, text: o.text })),
+  }));
+  const key = new Map(quiz.questions.map((q, n) => [`q${n}`, q.options.flatMap((o, m) => (o.is_correct ? [`q${n}o${m}`] : []))]));
   const [answers, setAnswers] = useState<Answers>({});
   const [result, setResult] = useState<{ score: number; right: number } | null>(null);
-  const total = quiz.questions.length;
+  const total = questions.length;
   const need = Math.ceil((quiz.threshold / 100) * total);
-  const answered = quiz.questions.filter((q) => (answers[q.id] ?? []).length > 0).length;
-  const isRight = (q: QuizQuestion, picked: string[] = []) => {
-    const k = q.options.filter((o) => o.correct).map((o) => o.id);
+  const answered = questions.filter((q) => (answers[q.id] ?? []).length > 0).length;
+  const isRight = (q: Question) => {
+    const k = key.get(q.id)!;
+    const picked = answers[q.id] ?? [];
     return k.length === picked.length && k.every((x) => picked.includes(x));
   };
-  const byId = new Map(quiz.questions.map((q) => [q.id, q]));
 
   return (
     <Screen
-      title={t.name}
+      title={quiz.name || "Quiz"}
       back="Edycja"
-      onBack={pop}
-      subtitle={`${t.label} · ${total} pytań · zaliczenie od ${quiz.threshold}% (${need} z ${total}) · podgląd admina, wynik nie jest zapisywany`}
+      onBack={onBack}
+      subtitle={`${total} pytań · zaliczenie od ${quiz.threshold}% (${need} z ${total}) · podgląd admina, wynik nie jest zapisywany`}
       footer={
         result ? (
           <Button size="lg" onClick={() => (setResult(null), setAnswers({}))} className="flex-1 sm:flex-none">
@@ -220,8 +224,8 @@ export function QuizPreviewScreen({ taskId }: { taskId: string }) {
               size="lg"
               disabled={answered < total}
               onClick={() => {
-                const right = quiz.questions.filter((q) => isRight(q, answers[q.id])).length;
-                setResult({ right, score: Math.round((right / total) * 100) });
+                const right = questions.filter(isRight).length;
+                setResult({ right, score: Math.floor((right * 100) / total) });
               }}
             >
               Sprawdź
@@ -231,17 +235,13 @@ export function QuizPreviewScreen({ taskId }: { taskId: string }) {
       }
     >
       {result && (
-        <ResultCard score={result.score} right={result.right} total={total} need={need} passed={result.score >= quiz.threshold} passedText="Uczestnik od razu dostałby zaliczenie." />
+        <ResultCard score={result.score} right={result.right} total={total} need={need} passed={result.right * 100 >= quiz.threshold * total} passedText="Uczestnik od razu dostałby zaliczenie." />
       )}
       <Questions
-        questions={quiz.questions}
+        questions={questions}
         answers={answers}
         onToggle={(q, id) => !result && setAnswers(toggled(answers, q, id))}
-        mark={(q, id, on) => {
-          if (!result) return null;
-          const correct = byId.get(q.id)!.options.find((o) => o.id === id)?.correct;
-          return correct ? "right" : on ? "wrong" : null;
-        }}
+        mark={(q, id, on) => (!result ? null : key.get(q.id)!.includes(id) ? "right" : on ? "wrong" : null)}
       />
     </Screen>
   );

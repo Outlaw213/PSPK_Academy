@@ -2,7 +2,7 @@
 
 System edukacyjny Polskiego Stowarzyszenia Pasjonatów Kowalstwa: ścieżki nauki, zadania z kart, zgłoszenia ze zdjęciami i ocena instruktora.
 
-Backend MVP (M1–M11) jest gotowy: API dla uczestnika, instruktora i administratora. Panel WWW (`web/`) działa na prawdziwym API dla uczestnika (M12a), instruktora (M12b) i admina (M12c1); tylko kreator ścieżek jest jeszcze na danych przykładowych (M12c2). Android to M13. Plan i stan prac: `docs/plan.md`.
+Backend MVP (M1–M11) jest gotowy: API dla uczestnika, instruktora i administratora. Panel WWW (`web/`) działa w całości na prawdziwym API: uczestnik, instruktor i administrator z kreatorem ścieżek (M12). Android to M13. Plan i stan prac: `docs/plan.md`.
 
 ## Wymagania
 - Docker z Docker Compose v2 — do uruchomienia całości.
@@ -110,7 +110,7 @@ backend/
   tests/           testy (pytest, prawdziwy PostgreSQL)
 web/
   src/api/         klient API, sesja (token w pamięci, odświeżanie przez ciasteczko HttpOnly)
-  src/screens/     ekrany na API; kreator ścieżek (builder.tsx) jeszcze na danych przykładowych (src/mock/)
+  src/screens/     ekrany (uczestnik, instruktor, admin, kreator ścieżek — builder.tsx)
   e2e/             testy Playwright
   nginx.conf       serwowanie panelu i przekazywanie /api do backendu
 docs/              wymagania, decyzje, kontrakt API, architektura, plan
@@ -126,5 +126,4 @@ cd web
 npm install
 npm run dev          # http://localhost:5173, /api przekazywane do backendu na :8000 (inny: API_URL=...)
 npm run build        # wersja produkcyjna w web/dist
-npm run build:single # jeden plik HTML (podgląd do akceptacji) w web/dist-single
 ```

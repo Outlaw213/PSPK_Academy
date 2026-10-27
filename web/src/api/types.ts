@@ -304,7 +304,52 @@ export interface PathDetail extends PathSummary {
   versions: Version[];
 }
 
+/** The admin's view of a revision: the quiz key included. */
+export interface AdminRevision extends Omit<Revision, "questions" | "question_count"> {
+  created_at: string;
+  created_by: string;
+  questions: { id: string; position: number; text: string; kind: "SINGLE" | "MULTI"; options: { id: string; position: number; text: string; is_correct: boolean }[] }[];
+}
+
+export interface AdminTask {
+  id: string;
+  stage_id: string;
+  position: number;
+  is_active: boolean;
+  label: string | null; // null when deactivated (BR-34)
+  revision: AdminRevision;
+}
+
+export interface AdminStage {
+  id: string;
+  path_version_id: string;
+  name: string;
+  description: string;
+  position: number;
+  tasks: AdminTask[];
+}
+
 export interface VersionDetail extends Version {
   path_name: string;
-  stages: { id: string; name: string; description: string; position: number; tasks: { id: string; is_active: boolean; label: string | null; position: number }[] }[];
+  stages: AdminStage[];
+}
+
+/** Body of POST/PUT /admin/tasks (docs/api.md); every save makes a new revision. */
+export interface TaskContentIn {
+  name: string;
+  task_type: TaskType;
+  description: string | null;
+  instructions: string | null;
+  content_md: string | null;
+  assignment: string | null;
+  evaluation_criteria: string | null;
+  submission_requirements: string | null;
+  material: string | null;
+  quantity_description: string | null;
+  expected_duration_days: number | null;
+  pass_threshold: number | null;
+  questions: { text: string; kind: "SINGLE" | "MULTI"; options: { text: string; is_correct: boolean }[] }[];
+  video_links: { title: string; url: string }[];
+  materials?: { id: string; caption: string | null }[];
+  attachments?: { id: string; title: string }[];
 }

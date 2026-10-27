@@ -18,7 +18,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { TaskStatus } from "../api/types";
-import type { Photo } from "../mock/data";
 import { taskStatus, type Tone } from "../lib/status";
 
 const cx = (...c: (string | false | undefined | null)[]) => c.filter(Boolean).join(" ");
@@ -152,6 +151,14 @@ export function Row({
   ) : (
     <div className={base}>{inner}</div>
   );
+}
+
+/** A real image (`url`) or, while it loads / when there is none, a steel swatch in the task's motif. */
+export interface Photo {
+  id: string;
+  tone: number;
+  motif: "hook" | "nail" | "scroll" | "tongs" | "fire" | "anvil" | "heart" | "leaf";
+  url?: string;
 }
 
 const motifIcon: Record<Photo["motif"], LucideIcon> = {

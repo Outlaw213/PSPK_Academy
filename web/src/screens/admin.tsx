@@ -22,7 +22,7 @@ import type {
 } from "../api/types";
 import { auditActions, auditObject } from "../lib/audit";
 import { errorText } from "../lib/errors";
-import { formatDate, formatDateTime, personName } from "../lib/format";
+import { formatDate, formatDateTime, personName, plural } from "../lib/format";
 import { roleLabel, submissionStatus, userStatus } from "../lib/status";
 import { useApi } from "../lib/useApi";
 import { FeedbackCard, Loading } from "./participant";
@@ -276,23 +276,98 @@ function NewUserSheet({ open, onClose, onCreated }: { open: boolean; onClose: ()
   );
 }
 
-// --- paths (connected to the API in M12c2) ------------------------------------------------------
+// --- paths (FR-ADM-02) -------------------------------------------------------------------------
+
+interface VersionRow extends Version {
+  stages: number;
+  tasks: number;
+  enrolled: number;
+}
 
 export function AdminPathsScreen() {
   const { push } = useStore();
+  const [open, setOpen] = useState(false);
+  const { data, error, reload } = useApi(async () => {
+    const paths = await get<Page<PathSummary>>("/admin/paths?limit=200");
+    return Promise.all(
+      paths.items.map(async (p) => {
+        const d = await get<PathDetail>(`/admin/paths/${p.id}`);
+        const versions: VersionRow[] = await Promise.all(
+          d.versions.map(async (v) => {
+            const [detail, enr] = await Promise.all([
+              get<VersionDetail>(`/admin/path-versions/${v.id}`),
+              get<Page<Enrollment>>(`/admin/enrollments?path_version_id=${v.id}&limit=1`),
+            ]);
+            const tasks = detail.stages.reduce((n, s) => n + s.tasks.filter((t) => t.is_active).length, 0);
+            return { ...v, stages: detail.stages.length, tasks, enrolled: enr.total };
+          }),
+        );
+        return { ...d, versions };
+      }),
+    );
+  }, []);
   return (
-    <Screen title="Ścieżki" subtitle="Treść edukacyjna i jej wersje" actions={<Button variant="plain" icon={Plus} aria-label="Nowa ścieżka" />}>
-      <Group title="Podstawy kowalstwa" footer="Uczestnik zostaje przy wersji, do której go zapisano. Nowa wersja nie zmienia jego historii.">
-        <Row onClick={() => push({ name: "version" })} trailing={<Badge tone="ok">Przyjmuje zapisy</Badge>}>
-          <div className="text-body">Wersja 1</div>
-          <div className="text-footnote text-fg-2">2 etapy · 35 zadań · 6 zapisów</div>
-        </Row>
-        <Row chevron={false} trailing={<Badge tone="muted">Szkic</Badge>}>
-          <div className="text-body text-fg-2">Wersja 2</div>
-          <div className="text-footnote text-fg-3">kopia wersji 1 · nie przyjmuje zapisów</div>
-        </Row>
-      </Group>
+    <Screen title="Ścieżki" subtitle="Treść edukacyjna i jej wersje" actions={<Button variant="plain" icon={Plus} aria-label="Nowa ścieżka" onClick={() => setOpen(true)} />}>
+      {!data ? (
+        <Loading error={error} onRetry={reload} />
+      ) : data.length === 0 ? (
+        <Empty>Nie ma jeszcze żadnej ścieżki.</Empty>
+      ) : (
+        data.map((p) => (
+          <Group key={p.id} title={p.name} footer="Uczestnik zostaje przy wersji, do której go zapisano. Nowa wersja nie zmienia jego historii.">
+            {p.versions.length === 0 && (
+              <Row chevron={false}>
+                <span className="text-subhead text-fg-2">Brak wersji.</span>
+              </Row>
+            )}
+            {p.versions.map((v) => (
+              <Row key={v.id} onClick={() => push({ name: "version", versionId: v.id })} trailing={<Badge tone={v.is_active ? "ok" : "muted"}>{v.is_active ? "Przyjmuje zapisy" : "Nie przyjmuje zapisów"}</Badge>}>
+                <div className="text-body">Wersja {v.version_number}</div>
+                <div className="text-footnote text-fg-2">
+                  {plural(v.stages, "etap", "etapy", "etapów")} · {plural(v.tasks, "zadanie", "zadania", "zadań")} · {plural(v.enrolled, "zapis", "zapisy", "zapisów")}
+                  {v.copied_from_version_id ? " · kopia" : ""}
+                </div>
+              </Row>
+            ))}
+          </Group>
+        ))
+      )}
+      <NewPathSheet open={open} onClose={() => setOpen(false)} onCreated={(versionId) => push({ name: "version", versionId })} />
     </Screen>
+  );
+}
+
+function NewPathSheet({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (versionId: string) => void }) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const act = useAction();
+  const close = () => (setName(""), setDescription(""), act.setError(null), onClose());
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    let versionId = "";
+    const ok = await act.run(async () => {
+      const p = await post<PathSummary>("/admin/paths", { name: name.trim(), description: description.trim() });
+      versionId = (await post<Version>(`/admin/paths/${p.id}/versions`, { description: "" })).id; // version 1, closed for enrollments
+    }, "Utworzono ścieżkę z wersją 1");
+    if (ok) {
+      close();
+      onCreated(versionId);
+    }
+  };
+  return (
+    <Sheet open={open} title="Nowa ścieżka" onClose={close}>
+      <form className="flex flex-col gap-4" onSubmit={submit}>
+        <Field label="Nazwa ścieżki">{(id) => <input id={id} value={name} onChange={(e) => setName(e.target.value)} placeholder="Np. Kowalstwo artystyczne" className={inputClass} />}</Field>
+        <Field label="Opis" hint="Opcjonalnie">
+          {(id) => <textarea id={id} rows={2} value={description} onChange={(e) => setDescription(e.target.value)} className={inputClass} />}
+        </Field>
+        <ErrorText>{act.error}</ErrorText>
+        <Button type="submit" size="lg" disabled={!name.trim() || act.busy}>
+          Utwórz
+        </Button>
+        <p className="text-center text-footnote text-fg-3">Powstanie wersja 1 — pusta i bez zapisów, dopóki jej nie włączysz.</p>
+      </form>
+    </Sheet>
   );
 }
 

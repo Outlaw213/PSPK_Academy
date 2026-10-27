@@ -46,6 +46,8 @@
 - Kontener `web`: nginx serwuje zbudowaną aplikację i przekazuje `/api` do backendu — jedna domena, więc bez CORS, a ciasteczko sesji (`SameSite=Strict`) działa. W trybie deweloperskim to samo robi proxy Vite.
 - Pliki z kontrolą dostępu (zdjęcia zgłoszeń, zdjęcia wzorcowe, PDF) panel pobiera przez `fetch` z tokenem i pokazuje jako `blob:` URL — `<img src>` nie wysyła nagłówka `Authorization`, a tokenu nie wolno dawać w adresie (trafiłby do logów).
 - Panel nie liczy statusów ani oznaczeń zadań: po każdej akcji pobiera stan z API.
+- Wyjątek: podgląd quizu w kreatorze admina sprawdza odpowiedzi w przeglądarce na niezapisanych pytaniach i nic nie zapisuje. Uczestnika ocenia zawsze backend (BR-32).
+- Makieta jednoplikowa (podgląd do akceptacji, M0a) jest wycofana w M12c2 — panel działa tylko z API.
 
 ## Odstępstwa od specyfikacji v1 (zatwierdzone decyzjami PO)
 

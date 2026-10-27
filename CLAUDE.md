@@ -22,7 +22,7 @@ System edukacyjny Polskiego Stowarzyszenia Pasjonatów Kowalstwa: ścieżki → 
 - Interfejs po polsku, kody błędów API po angielsku.
 
 ## Struktura
-- `web/` — panel WWW (React + TS + Vite + Tailwind). Obecnie makieta na danych przykładowych (`web/src/mock/`).
+- `web/` — panel WWW (React + TS + Vite + Tailwind) na prawdziwym API; testy w przeglądarce: `cd web && npm run e2e`.
 - `backend/` — FastAPI: `app/` (config, database, errors, api, models), `alembic/` (migracje), `tests/` (`factories.py` — minimalne wiersze do testów bazy).
 - `android/` — później.
 
@@ -33,4 +33,4 @@ System edukacyjny Polskiego Stowarzyszenia Pasjonatów Kowalstwa: ścieżki → 
 - Lint backendu: `.venv/bin/ruff check . && .venv/bin/ruff format --check .`
 - Cały stos: `cp .env.example .env` (uzupełnij hasła), `docker compose up -d --build`, `curl localhost:8000/health`.
 - Za proxy z własnym CA: `docker build --secret id=pip_ca,src=<plik CA> -t pspk-akademia-backend backend`, potem `docker compose up -d --no-build`.
-- Makieta: `cd web && npm install && npm run dev` (build: `npm run build`, lint: `npm run lint`).
+- Panel: `cd web && npm install && npm run dev` (proxy `/api` → `localhost:8000`; build: `npm run build`, lint: `npm run lint`, e2e na jednorazowym stosie: `npm run e2e`).
