@@ -60,14 +60,15 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] BR-15 (ukończenie zapisu) przy wyłączeniu zadania; BR-29 anulowanie zapisu anuluje otwarte próby; Q-45 reaktywacja
 **DoD:** kryteria §29 „Enrollment”.
 
-## M6 — Zgłoszenia: szkic, zdjęcia, wysyłka, historia, quiz (STEP 11) ← GOTOWE, CZEKA NA AKCEPTACJĘ
+## M6 — Zgłoszenia: szkic, zdjęcia, wysyłka, historia, quiz (STEP 11) ✔ zaakceptowane 2026-10-27
 - [x] Szkic, komentarz, zdjęcia pojedynczo — od razu na dysk (`LocalDiskStorage`, ADR-24) ze skalowaniem i usuwaniem EXIF (ADR-25), bo praca własna wymaga zdjęcia przy wysyłce; quiz z automatyczną oceną (BR-32), wysyłka z wymaganiami wg typu, porzucenie/wycofanie, historia
 - [x] TEST 5, TEST 7, TEST 8, TEST 9, TEST 12, BR-14, BR-17, BR-21, BR-22, BR-23
 **DoD:** nieograniczone próby, pełna historia, brak obejścia blokad, limit zdjęć.
 
-## M7 — Uprawnienia instruktora, claim, release (STEP 13)
-- [ ] Uprawnienia ścieżka/etap (nadanie, lista, odebranie), kolejka, szczegóły, claim, release ręczny i automatyczny, zakaz samooceny
-- [ ] TEST 10, TEST 11, test równoległego claim (N równoległych żądań → dokładnie 1×200), BR-25, BR-26
+## M7 — Uprawnienia instruktora, claim, release (STEP 13) ← GOTOWE, CZEKA NA AKCEPTACJĘ
+- [x] Uprawnienia ścieżka/etap (nadanie, lista, odebranie), kolejka, szczegóły, claim, release ręczny i automatyczny, zakaz samooceny
+- [x] TEST 10, TEST 11, test równoległego claim (N równoległych żądań → dokładnie 1×200), BR-25, BR-26
+- [x] Dostęp do zdjęć zgłoszeń: właściciel, instruktor z uprawnieniem, admin (przeniesione z M9)
 **DoD:** kryteria §29 „Instructor” (część claim).
 
 ## M8 — Ocena i ostateczne zaliczenie (STEP 14)

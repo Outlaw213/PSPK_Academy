@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Request, Response, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
-from app.dependencies.auth import CurrentUser, require_participant
+from app.dependencies.auth import CurrentUser, require_authenticated_user, require_participant
 from app.schemas.participant import MyPath, PathProgress, PathStructure, TaskDetail
 from app.schemas.submission import (
     CommentIn,
@@ -128,10 +128,11 @@ async def get_photo(
     submission_id: uuid.UUID,
     photo_id: uuid.UUID,
     request: Request,
-    p: CurrentUser = Participant,
+    u: CurrentUser = Depends(require_authenticated_user),
     s: AsyncSession = Session,
 ):
-    data, mime = await subs.photo_bytes(s, request.app.state.storage, p.user, submission_id, photo_id)
+    # Owner, an instructor with permission for the task, or an admin (BR-17); everyone else gets 404.
+    data, mime = await subs.photo_bytes(s, request.app.state.storage, u, submission_id, photo_id)
     return Response(content=data, media_type=mime, headers={"Cache-Control": "private, max-age=3600"})
 
 

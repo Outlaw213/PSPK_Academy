@@ -16,7 +16,7 @@ from app.errors import AppError
 from app.models import Assessment, Enrollment, Stage, Submission, SubmissionPhoto, Task, TaskRevision, User
 from app.schemas.participant import PublicRevision
 from app.schemas.submission import AssessmentOut, PersonRef, PhotoOut, SubmissionDetail, SubmissionOut
-from app.services import audit_service, content_service, task_service
+from app.services import audit_service, content_service, permission_service, task_service
 from app.services.storage_service import Storage
 from app.utils.images import InvalidImage, process_photo
 
@@ -288,11 +288,19 @@ async def delete_photo(
 
 
 async def photo_bytes(
-    session: AsyncSession, storage: Storage, user: User, submission_id: uuid.UUID, photo_id: uuid.UUID
+    session: AsyncSession, storage: Storage, viewer, submission_id: uuid.UUID, photo_id: uuid.UUID
 ) -> tuple[bytes, str]:
-    sub = await _own(session, user, submission_id)
+    """`viewer` is the CurrentUser: the owner, an instructor allowed to assess it, or an ADMIN (BR-17)."""
+    sub = await session.get(Submission, submission_id)
     photo = await session.get(SubmissionPhoto, photo_id)
-    if photo is None or photo.submission_id != sub.id:
+    if sub is None or photo is None or photo.submission_id != sub.id:
+        raise not_found()
+    allowed = (
+        sub.user_id == viewer.id
+        or "ADMIN" in viewer.roles
+        or ("INSTRUCTOR" in viewer.roles and await permission_service.can_view(session, viewer.id, sub))
+    )
+    if not allowed:
         raise not_found()
     return storage.read(photo.storage_key), photo.mime_type
 

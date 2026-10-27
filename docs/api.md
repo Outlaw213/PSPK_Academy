@@ -98,6 +98,12 @@ Wgrywanie plików (`/materials`, `/attachments`) — od M9.
 Zdjęcie: `multipart/form-data`, pole `file`, jedno na żądanie; zapisywane po przetworzeniu (ADR-25), odczyt `GET /submissions/{id}/photos/{photo_id}` (`image/webp`).
 Quiz: `POST /tasks/{id}/quiz-attempts` `{answers: [{question_id, option_ids: [...]}]}` → 201 `{submission, score, correct, total, passed, review}`; `review` (poprawne odpowiedzi) tylko przy zaliczeniu, inaczej `null` (BR-32).
 
+**Instruktor** (M7). Zasięg = suma uprawnień do wersji i do etapów (BR-24), bez własnych zgłoszeń (BR-25).
+Kolejka `GET /instructor/submissions?status=&path_version_id=`: `[{submission, participant{id, first_name, last_name}, task{id, label, name, task_type}, stage{id, name, position}, path{id, name, version}, photo_count}]` — `SUBMITTED` w zasięgu + `UNDER_REVIEW` przejęte przez siebie; najstarsze najpierw.
+Szczegóły `GET /instructor/submissions/{id}`: `{submission, participant, task, stage, path, revision (pełna, z kryteriami), previous_attempts[]}`; spoza zasięgu → 404.
+Uprawnienie `POST /admin/instructor-permissions`: dokładnie jedno z `path_version_id` / `stage_id` (inaczej 422 VALIDATION_ERROR); duplikat → 409 PERMISSION_EXISTS.
+`GET /submissions/{id}/photos/{photo_id}`: właściciel, instruktor z uprawnieniem do zadania albo admin; inni → 404.
+
 **Widok uczestnika** (M5). `GET /me/paths/{path_version_id}/progress`:
 `{path: {id, name, version}, enrollment_status, progress: {completed, total}, stages: [{id, name, position, gate_open, tasks: [{id, label, name, task_type, position, status}]}]}` — tylko aktywne zadania, etapy bez aktywnych zadań pominięte (BR-01). Kolejność i typy dokładnie takie, jak ustawił admin.
 `GET /tasks/{task_id}`: `{id, label, stage: {id, name, position}, status, revision}` — `revision` jak w API admina, ale pytania quizu **bez** `is_correct` (BR-32). Zadanie wyłączone albo spoza zapisów użytkownika → 404.
@@ -147,6 +153,7 @@ Quiz: `POST /tasks/{id}/quiz-attempts` `{answers: [{question_id, option_ids: [..
 | TASK_IS_COURSE | 409 | uczestnik próbuje utworzyć zgłoszenie dla kursu (BR-30) |
 | DATABASE_UNAVAILABLE | 503 | `/health`: brak połączenia z bazą |
 | INTERNAL_ERROR | 500 | nieobsłużony błąd — bez szczegółów w odpowiedzi (NFR-02) |
+| PERMISSION_EXISTS | 409 | takie uprawnienie instruktora już istnieje |
 | CONCURRENT_UPDATE | 409 | wykryte zakleszczenie przy równoległych operacjach — klient może ponowić (ADR-10) |
 
 Format: `{"error": {"code": "TASK_LOCKED", "message": "Task is locked until the previous task is passed.", "details": null}}`

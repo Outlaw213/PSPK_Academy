@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.errors import AppError
 from app.models import RefreshToken, Submission, User, UserRole
 from app.schemas.user import UserCreate, UserOut, UserPage, UserUpdate
-from app.services import audit_service
+from app.services import audit_service, permission_service
 from app.utils.security import hash_password
 
 ROLE_ORDER = {"PARTICIPANT": 0, "INSTRUCTOR": 1, "ADMIN": 2}
@@ -108,23 +108,18 @@ async def revoke_sessions(session: AsyncSession, user_id: uuid.UUID, keep_family
 
 async def release_claims(session: AsyncSession, instructor_id: uuid.UUID, actor_id: uuid.UUID | None) -> None:
     """BR-26: an instructor who can no longer assess gives their claimed submissions back to the queue."""
-    released = (
-        await session.execute(
-            update(Submission)
-            .where(Submission.instructor_id == instructor_id, Submission.status == "UNDER_REVIEW")
-            .values(status="SUBMITTED", instructor_id=None, claimed_at=None)
-            .returning(Submission.id)
+    claimed = (
+        (
+            await session.execute(
+                select(Submission.id).where(
+                    Submission.instructor_id == instructor_id, Submission.status == "UNDER_REVIEW"
+                )
+            )
         )
-    ).scalars()
-    for sub_id in released:
-        audit_service.record(
-            session,
-            actor_id,
-            "SUBMISSION_RELEASED",
-            "submission",
-            sub_id,
-            {"reason": "automatic", "instructor_id": str(instructor_id)},
-        )
+        .scalars()
+        .all()
+    )
+    await permission_service.release_submissions(session, list(claimed), actor_id, "automatic")
 
 
 async def _transition(session: AsyncSession, actor: User, user_id: uuid.UUID, to: str, action: str) -> User:

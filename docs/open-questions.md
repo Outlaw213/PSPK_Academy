@@ -66,3 +66,4 @@
 | Q-58 | **Pisownia nazw z listy** potwierdzona: „Zestaw sztućców”, „Zgrzewanie kowalskie”, „Hidden Tang”, „Gwóźdź”, „Topór”. | 2026-10-26 |
 | Q-64 | **Oznaczenie zadania `E{etap}.{pozycja}`** (np. E1.2; E2.1 = pierwsze zadanie Etapu 2), wspólne dla wszystkich typów; typ pokazywany osobno. Przelicza się automatycznie przy zmianie kolejności (BR-34). Zastępuje „PRACA WŁASNA 02” z kart. | 2026-10-26 |
 | Q-65 | **Decyzja techniczna M3:** hasła Argon2id (argon2-cffi), tokeny JWT HS256 (PyJWT); pierwszy admin z komendy `create-admin` (FR-AUTH-08). Limit prób logowania poza MVP — do rozważenia przed publikacją (Q-66). | 2026-10-27 |
+| Q-67 | **Zdjęcia zapisywane jako WebP** (ADR-25) — potwierdzone: zdjęcia oglądane tylko w aplikacji, lepsza kompresja jest wskazana. | 2026-10-27 |
