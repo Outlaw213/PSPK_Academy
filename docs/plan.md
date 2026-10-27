@@ -53,16 +53,16 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] `test_paths.py`, `test_quiz_admin.py`, `test_revisions.py` (część admin), `test_structure.py` (część bez zgłoszeń): TEST 13, BR-16, BR-19, BR-24
 **DoD:** kryteria §29 „Learning paths”.
 
-## M5 — Zapisy i statusy zadań (STEP 10, 12) ← GOTOWE, CZEKA NA AKCEPTACJĘ
+## M5 — Zapisy i statusy zadań (STEP 10, 12) ✔ zaakceptowane 2026-10-27
 - [x] Admin: zapisy (utworzenie, lista, anulowanie); uczestnik: `/me/paths`, szczegóły, `/progress`, `/tasks/{id}` z widoczną rewizją
 - [x] `compute_path_statuses` (jedyne miejsce statusów, stała liczba zapytań), `get_previous_task`, `is_task_available`
 - [x] Testy jednostkowe statusów + TEST 1, TEST 2, przejście między etapami, zapis nieaktywny (Q-39), kursy poza kolejnością i bramka etapu (BR-02, BR-31)
 - [x] BR-15 (ukończenie zapisu) przy wyłączeniu zadania; BR-29 anulowanie zapisu anuluje otwarte próby; Q-45 reaktywacja
 **DoD:** kryteria §29 „Enrollment”.
 
-## M6 — Zgłoszenia: szkic, zdjęcia, wysyłka, historia (STEP 11)
-- [ ] Szkic, komentarz, zdjęcia pojedynczo (magazyn in-memory), wysyłka z wymaganiami wg typu, porzucenie/wycofanie, historia
-- [ ] TEST 5, TEST 7, TEST 8, TEST 9, TEST 12, BR-14, BR-17, BR-21, BR-22, BR-23
+## M6 — Zgłoszenia: szkic, zdjęcia, wysyłka, historia, quiz (STEP 11) ← GOTOWE, CZEKA NA AKCEPTACJĘ
+- [x] Szkic, komentarz, zdjęcia pojedynczo — od razu na dysk (`LocalDiskStorage`, ADR-24) ze skalowaniem i usuwaniem EXIF (ADR-25), bo praca własna wymaga zdjęcia przy wysyłce; quiz z automatyczną oceną (BR-32), wysyłka z wymaganiami wg typu, porzucenie/wycofanie, historia
+- [x] TEST 5, TEST 7, TEST 8, TEST 9, TEST 12, BR-14, BR-17, BR-21, BR-22, BR-23
 **DoD:** nieograniczone próby, pełna historia, brak obejścia blokad, limit zdjęć.
 
 ## M7 — Uprawnienia instruktora, claim, release (STEP 13)
@@ -79,7 +79,7 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 
 ## M9 — Magazyn obiektów i pliki (STEP 15)
 - [ ] Upload zdjęć wzorcowych i załączników PDF przez admina (`/admin/tasks/{id}/materials`, `/attachments`), przeniesione z M4
-- [ ] `LocalDiskStorage` (ADR-24); walidacja po zawartości; skalowanie do 2560 px + WebP, usuwanie EXIF (ADR-25); kompensacja przy błędzie transakcji
+- [ ] (magazyn na dysku i przetwarzanie zdjęć powstają już w M6; tu: PDF, zdjęcia wzorcowe, dostęp instruktora i admina do zdjęć, test integracyjny)
 - [ ] Endpointy pobierania zdjęć zgłoszeń, zdjęć wzorcowych i załączników PDF z kontrolą uprawnień (BR-33, `test_attachments.py`)
 - [ ] Zły typ, za duży plik, test integracyjny z prawdziwym magazynem
 **DoD:** kryteria §29 „Submissions” (zdjęcia).

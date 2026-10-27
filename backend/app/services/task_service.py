@@ -208,3 +208,17 @@ def is_task_available(state: PathState, task_id: uuid.UUID) -> bool:
     """A new attempt may start (spec §8): the task is active, in order and not passed or pending."""
     t = state.task(task_id)
     return t is not None and t.status in STARTABLE
+
+
+def in_order(state: PathState, task_id: uuid.UUID) -> bool:
+    """The order allows working on the task now: active enrollment, open stage gate and the
+    previous work passed. Unlike the displayed status, an own open attempt does not matter here,
+    so a draft can be sent only while the task is still in order (BR-21)."""
+    t = state.task(task_id)
+    if t is None or state.enrollment.status != "ACTIVE":
+        return False
+    stage = next(s for s in state.stages if s.stage_id == t.stage_id)
+    if not stage.gate_open:
+        return False
+    prev = state.task(t.previous_task_id) if t.previous_task_id else None
+    return prev is None or prev.status == "PASSED"

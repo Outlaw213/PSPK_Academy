@@ -94,6 +94,10 @@ Kolejność: `PUT …/order` z `{"ids": [...]}` — pełna lista id w nowej kole
 `PUT /admin/tasks/{id}/stage`: `{stage_id}` — na koniec wskazanego etapu tej samej wersji; inny → 422 STAGE_OUTSIDE_VERSION.
 Wgrywanie plików (`/materials`, `/attachments`) — od M9.
 
+**Zgłoszenia uczestnika** (M6). Zgłoszenie: `{id, task_id, attempt_number, status, comment, task_revision_id, submitted_at, claimed_at, assessed_at, cancelled_at, created_at, photos[{id, position, mime_type, file_size, width, height}], assessment{result, comment, score, instructor{first_name, last_name} | null, created_at} | null}`; `GET /submissions/{id}` dodatkowo `revision` (jak w `/tasks/{id}`, gdy wysłane).
+Zdjęcie: `multipart/form-data`, pole `file`, jedno na żądanie; zapisywane po przetworzeniu (ADR-25), odczyt `GET /submissions/{id}/photos/{photo_id}` (`image/webp`).
+Quiz: `POST /tasks/{id}/quiz-attempts` `{answers: [{question_id, option_ids: [...]}]}` → 201 `{submission, score, correct, total, passed, review}`; `review` (poprawne odpowiedzi) tylko przy zaliczeniu, inaczej `null` (BR-32).
+
 **Widok uczestnika** (M5). `GET /me/paths/{path_version_id}/progress`:
 `{path: {id, name, version}, enrollment_status, progress: {completed, total}, stages: [{id, name, position, gate_open, tasks: [{id, label, name, task_type, position, status}]}]}` — tylko aktywne zadania, etapy bez aktywnych zadań pominięte (BR-01). Kolejność i typy dokładnie takie, jak ustawił admin.
 `GET /tasks/{task_id}`: `{id, label, stage: {id, name, position}, status, revision}` — `revision` jak w API admina, ale pytania quizu **bez** `is_correct` (BR-32). Zadanie wyłączone albo spoza zapisów użytkownika → 404.

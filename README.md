@@ -9,7 +9,8 @@ System edukacyjny Polskiego Stowarzyszenia Pasjonatów Kowalstwa: ścieżki nauk
 - **M3 — konta i logowanie**: rejestracja z akceptacją admina, sesje, role, panel użytkowników (API).
 - **M4 — treść edukacyjna** (API admina): ścieżki, wersje (także kopia z uprawnieniami), etapy, zadania wszystkich typów z wersjami treści, quizy, linki do filmów, kolejność, wyłączanie zadań.
 - **M5 — zapisy i statusy**: admin zapisuje uczestników; uczestnik widzi swoją ścieżkę ze statusami liczonymi z kolejności i typów ustawionych przez admina.
-- Dalej **M6–M11** wg `docs/plan.md`.
+- **M6 — zgłoszenia uczestnika**: szkic, zdjęcia (na dysk, zmniejszane do 2560 px, WebP, bez EXIF), wysyłka, wycofanie, historia prób, quiz z wynikiem od razu.
+- Dalej **M7–M11** wg `docs/plan.md`.
 
 ## Dokumentacja
 Zacznij od `docs/sdd-process.md`. Specyfikacja wejściowa: `PSPK_Academy_specyfication_v1.txt`.

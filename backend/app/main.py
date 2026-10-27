@@ -8,6 +8,7 @@ from app.api.v1 import router as v1_router
 from app.config import Settings, get_settings
 from app.database import make_engine, make_sessionmaker
 from app.errors import install_error_handlers
+from app.services.storage_service import LocalDiskStorage
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -28,6 +29,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.engine = engine
     app.state.sessionmaker = make_sessionmaker(engine)
+    app.state.storage = LocalDiskStorage(settings.storage_root)
 
     install_error_handlers(app)
     app.include_router(health.router)

@@ -7,6 +7,10 @@ os.environ.setdefault(
 )
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret-not-for-production")
 os.environ.setdefault("ENVIRONMENT", "test")
+# Photos go to a throwaway directory, never the real photo disk.
+import tempfile  # noqa: E402
+
+os.environ.setdefault("STORAGE_ROOT", tempfile.mkdtemp(prefix="pspk-test-storage-"))
 
 import pytest  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
