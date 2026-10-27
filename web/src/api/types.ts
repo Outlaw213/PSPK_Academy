@@ -195,3 +195,41 @@ export interface QuizResult {
   passed: boolean;
   review: { question_id: string; option_ids: string[]; correct_option_ids: string[] }[] | null;
 }
+
+// --- instructor (M12b) ---
+
+export interface PersonRef {
+  id: string;
+  first_name: string;
+  last_name: string;
+}
+
+export interface QueueItem {
+  submission: Submission;
+  participant: PersonRef;
+  task: { id: string; label: string | null; name: string; task_type: TaskType };
+  stage: { id: string; name: string; position: number };
+  path: PathRef;
+  photo_count: number;
+  instructor: PersonRef | null; // who claimed / assessed it; null while waiting in the queue
+}
+
+export interface ReviewDetail extends QueueItem {
+  revision: Revision; // the revision the attempt was sent against, criteria included
+  previous_attempts: Submission[];
+}
+
+export interface CourseItem {
+  task: { id: string; label: string | null; name: string };
+  stage: { id: string; name: string; position: number };
+  path: PathRef;
+  enrolled: number;
+  passed: number;
+}
+
+export interface CourseParticipant {
+  participant: PersonRef;
+  enrollment_id: string;
+  status: TaskStatus;
+  attempts: number;
+}

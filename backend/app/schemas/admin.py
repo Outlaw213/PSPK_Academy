@@ -11,7 +11,7 @@ from app.schemas.submission import SubmissionOut
 
 
 class AdminSubmissionItem(QueueItem):
-    instructor: dict | None  # who claimed, assessed or recorded it
+    """Queue item plus the participant's e-mail."""
 
 
 class AdminSubmissionPage(BaseModel):

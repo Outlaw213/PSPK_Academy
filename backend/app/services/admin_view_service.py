@@ -15,13 +15,8 @@ from app.services import content_service, instructor_service, submission_service
 async def _item(session: AsyncSession, sub: Submission, labels: dict) -> AdminSubmissionItem:
     base = await instructor_service._item(session, sub, labels)
     participant = await session.get(User, sub.user_id)
-    instructor = await session.get(User, sub.instructor_id) if sub.instructor_id else None
     return AdminSubmissionItem(
-        **base.model_dump(exclude={"participant"}),
-        participant={**base.participant, "email": participant.email},
-        instructor={"id": instructor.id, "first_name": instructor.first_name, "last_name": instructor.last_name}
-        if instructor
-        else None,
+        **base.model_dump(exclude={"participant"}), participant={**base.participant, "email": participant.email}
     )
 
 

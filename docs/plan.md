@@ -97,15 +97,16 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] Pełna regresja, przejście checklisty §29 punkt po punkcie — `docs/acceptance-checklist.md`
 **DoD:** wszystkie kryteria §29 odhaczone na podstawie prawdziwych wyników testów.
 
-## M12a — Panel WWW: logowanie, sesja, uczestnik ← JESTEŚMY TUTAJ
+## M12a — Panel WWW: logowanie, sesja, uczestnik ✔ zaakceptowane 2026-10-27
 - [x] Warstwa API (token w pamięci, odświeżanie przez ciasteczko — ADR-26), polskie komunikaty błędów, pliki przez `blob:`
 - [x] Logowanie, rejestracja, zmiana hasła, wylogowanie; role z `/auth/me`
 - [x] Uczestnik: ścieżki, postęp, zadanie, szkic ze zdjęciami, wysyłka, wycofanie, quiz, historia (`GET /me/submissions`, FR-PAR-08, `test_participant_history.py`)
 - [x] Kontener `web` (nginx) w Docker Compose; testy Playwright (`web/e2e/`) na jednorazowym stosie z danymi startowymi; zrzuty ekranu dla PO
 **DoD:** uczestnik przechodzi pełny scenariusz w przeglądarce na prawdziwym API; statusy wyłącznie z backendu.
 
-## M12b — Panel WWW: instruktor
-- [ ] Kolejka, ocena ze zdjęciami (przejęcie, zwolnienie, zaliczenie, do poprawy), kursy, „Ocenione” (`GET /instructor/assessed`)
+## M12b — Panel WWW: instruktor ← JESTEŚMY TUTAJ
+- [x] Kolejka, ocena ze zdjęciami (przejęcie, zwolnienie, zaliczenie, do poprawy), kursy, „Ocenione” (`GET /instructor/assessed`, FR-INS-07, `test_instructor_assessed.py`)
+- [x] Testy Playwright instruktora (`web/e2e/instructor.spec.ts`, w tym wyścig o przejęcie), zrzuty dla PO
 
 ## M12c — Panel WWW: admin
 - [ ] Użytkownicy, kreator ścieżek (wersje, etapy, zadania, quiz, pliki, kolejność), zapisy, uprawnienia, dziennik, zgłoszenia; usunięcie danych przykładowych

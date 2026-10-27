@@ -1,6 +1,6 @@
+// Navigation, toasts, and the sample data of the admin screens not yet connected to the API (M12c).
 import { createContext, useContext } from "react";
-import type { AdminUser, Stage, Submission } from "./mock/data";
-// Sample-data store for the screens not yet connected to the API (instructor: M12b, admin: M12c).
+import type { AdminUser, Stage } from "./mock/data";
 
 export type Route =
   | { name: "paths" }
@@ -23,24 +23,11 @@ export type Route =
   | { name: "permissions" }
   | { name: "audit" };
 
-export interface Draft {
-  taskId: string;
-  attempt: number;
-  comment: string;
-  photos: { id: string; url: string; name: string }[];
-}
-
 export interface Store {
   stages: Stage[];
   setStages: (f: (s: Stage[]) => Stage[]) => void;
-  history: Submission[];
-  setHistory: (f: (s: Submission[]) => Submission[]) => void;
-  queue: Submission[];
-  setQueue: (f: (s: Submission[]) => Submission[]) => void;
   users: AdminUser[];
   setUsers: (f: (s: AdminUser[]) => AdminUser[]) => void;
-  draft: Draft | null;
-  setDraft: (d: Draft | null) => void;
   toast: (msg: string) => void;
   push: (r: Route) => void;
   pop: () => void;

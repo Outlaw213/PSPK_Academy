@@ -31,16 +31,26 @@ export interface TestParticipant {
   tasks: Record<string, string>; // name → id
 }
 
-/** A fresh participant enrolled in "Podstawy kowalstwa", so every test starts from the first task. */
-export async function newParticipant(request: APIRequestContext, first = "Ewa"): Promise<TestParticipant> {
-  const admin = await token(request, ADMIN);
-  const email = `e2e-${Date.now()}-${Math.floor(Math.random() * 1e6)}@akademia.example`;
-  const password = "haslo-testowe-e2e-2026";
-  const user = await call<{ id: string }>(request, admin, "POST", "/admin/users", { email, password, first_name: first, last_name: "Testowa", roles: ["PARTICIPANT"] });
+/** A name no other test uses: the seeded instructor's queue fills up with everyone's attempts. */
+export const uniq = (base: string) => `${base}${Date.now() % 100000}${Math.floor(Math.random() * 90 + 10)}`;
+
+const newEmail = () => `e2e-${Date.now()}-${Math.floor(Math.random() * 1e6)}@akademia.example`;
+
+/** The seeded version of "Podstawy kowalstwa". */
+async function seedVersion(request: APIRequestContext, admin: string): Promise<string> {
   const paths = await call<{ items: { id: string; name: string }[] }>(request, admin, "GET", "/admin/paths");
   const path = paths.items.find((p) => p.name === "Podstawy kowalstwa")!;
   const detail = await call<{ versions: { id: string }[] }>(request, admin, "GET", `/admin/paths/${path.id}`);
-  const versionId = detail.versions[0].id;
+  return detail.versions[0].id;
+}
+
+/** A fresh participant enrolled in "Podstawy kowalstwa", so every test starts from the first task. */
+export async function newParticipant(request: APIRequestContext, first = "Ewa"): Promise<TestParticipant> {
+  const admin = await token(request, ADMIN);
+  const email = newEmail();
+  const password = "haslo-testowe-e2e-2026";
+  const user = await call<{ id: string }>(request, admin, "POST", "/admin/users", { email, password, first_name: first, last_name: "Testowa", roles: ["PARTICIPANT"] });
+  const versionId = await seedVersion(request, admin);
   await call(request, admin, "POST", "/admin/enrollments", { user_id: user.id, path_version_id: versionId });
   const tok = await token(request, email, password);
   const progress = await call<{ stages: { tasks: { id: string; name: string }[] }[] }>(request, tok, "GET", `/me/paths/${versionId}/progress`);
@@ -48,30 +58,46 @@ export async function newParticipant(request: APIRequestContext, first = "Ewa"):
   return { email, password, token: tok, versionId, tasks };
 }
 
-/** Participant sends an attempt (comment, optional photo); the seeded instructor claims and assesses it. */
-export async function sendAndAssess(request: APIRequestContext, p: TestParticipant, task: string, result: "PASSED" | "NEEDS_IMPROVEMENT", comment?: string) {
-  const draft = await call<{ id: string }>(request, p.token, "POST", `/tasks/${p.tasks[task]}/submissions`, { comment: "Odpowiedź" });
+/** A second instructor with a permission for the whole seeded version. */
+export async function newInstructor(request: APIRequestContext, first: string) {
+  const admin = await token(request, ADMIN);
+  const email = newEmail();
+  const password = "haslo-instruktora-e2e-2026";
+  const user = await call<{ id: string }>(request, admin, "POST", "/admin/users", { email, password, first_name: first, last_name: "Drugi", roles: ["INSTRUCTOR"] });
+  await call(request, admin, "POST", "/admin/instructor-permissions", { instructor_id: user.id, path_version_id: await seedVersion(request, admin) }, 201);
+  return { email, password, name: `${first} Drugi`, token: await token(request, email, password) };
+}
+
+/** Participant sends an attempt with a comment and a photo; returns the submission id. */
+export async function submit(request: APIRequestContext, p: TestParticipant, task: string, comment = "Odpowiedź"): Promise<string> {
+  const draft = await call<{ id: string }>(request, p.token, "POST", `/tasks/${p.tasks[task]}/submissions`, { comment });
   const up = await request.post(`${API}/submissions/${draft.id}/photos`, {
     headers: { Authorization: `Bearer ${p.token}` },
     multipart: { file: { name: "gwozdz.jpg", mimeType: "image/jpeg", buffer: PHOTO } },
   });
   expect(up.ok()).toBeTruthy();
   await call(request, p.token, "POST", `/submissions/${draft.id}/submit`);
-  const ins = await token(request, INSTRUCTOR);
-  await call(request, ins, "POST", `/submissions/${draft.id}/claim`);
-  await call(request, ins, "POST", `/submissions/${draft.id}/assessment`, { result, comment: comment ?? null }, 201);
+  return draft.id;
 }
 
-export async function uiLogin(page: Page, email: string, password: string) {
+/** Participant sends an attempt; the seeded instructor claims and assesses it. */
+export async function sendAndAssess(request: APIRequestContext, p: TestParticipant, task: string, result: "PASSED" | "NEEDS_IMPROVEMENT", comment?: string) {
+  const id = await submit(request, p, task);
+  const ins = await token(request, INSTRUCTOR);
+  await call(request, ins, "POST", `/submissions/${id}/claim`);
+  await call(request, ins, "POST", `/submissions/${id}/assessment`, { result, comment: comment ?? null }, 201);
+}
+
+export async function uiLogin(page: Page, email: string, password: string, home = "Moje ścieżki") {
   await page.goto("/");
   await page.getByLabel("E-mail").fill(email);
   await page.getByLabel("Hasło").fill(password);
   await page.getByRole("button", { name: "Zaloguj się" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Moje ścieżki" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: home })).toBeVisible();
 }
 
 /** The visible navigation item (tab bar on phones, sidebar on desktop). */
-export const nav = (page: Page, name: string) => page.getByRole("button", { name, exact: true }).filter({ visible: true }).first();
+export const nav = (page: Page, name: string | RegExp) => page.getByRole("button", typeof name === "string" ? { name, exact: true } : { name }).filter({ visible: true }).first();
 
 export const title = (page: Page, name: string | RegExp) => page.getByRole("heading", { level: 1, name });
 

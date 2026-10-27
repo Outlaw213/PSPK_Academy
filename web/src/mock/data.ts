@@ -87,31 +87,6 @@ export interface Stage {
   tasks: Task[];
 }
 
-export interface Assessment {
-  result: "PASSED" | "NEEDS_IMPROVEMENT";
-  comment: string;
-  instructor: string;
-  at: string;
-}
-
-export interface Submission {
-  id: string;
-  taskId: string;
-  taskName: string;
-  participant: string;
-  attempt: number;
-  status: SubmissionStatus;
-  comment: string;
-  photos: Photo[];
-  submittedAt?: string;
-  instructor?: string;
-  assessment?: Assessment;
-  revision: number;
-  stageName: string;
-  /** Course result entered by an instructor (BR-30). */
-  recordedBy?: string;
-}
-
 export const me = {
   firstName: "Jan",
   lastName: "Kowalski",
@@ -119,7 +94,6 @@ export const me = {
   roles: ["PARTICIPANT", "INSTRUCTOR", "ADMIN"] as Role[],
 };
 
-const p = (id: string, tone: number, motif: Photo["motif"]): Photo => ({ id, tone, motif });
 const img = (id: string, url: string): Photo => ({ id, tone: 0, motif: "hook", url });
 
 const kinds = { P: "PRACTICAL", K: "COURSE", T: "THEORY", Q: "QUIZ" } as const;
@@ -333,163 +307,6 @@ export const stages: Stage[] = [
   },
 ];
 
-export const myHistory: Submission[] = [
-  {
-    id: "sub-12",
-    taskId: "t1-2",
-    taskName: "Haczyk / zawieszka",
-    participant: "Jan Kowalski",
-    attempt: 2,
-    status: "NEEDS_IMPROVEMENT",
-    comment: "Druga próba. Poprawiłem położenie otworu.",
-    photos: [p("h21", 18, "hook"), p("h22", 26, "hook"), p("h23", 34, "hook")],
-    submittedAt: "2026-10-21 18:40",
-    instructor: "Marek Nowak",
-    revision: 3,
-    stageName: "Kowalstwo podstawowe",
-    assessment: {
-      result: "NEEDS_IMPROVEMENT",
-      comment:
-        "Otwór już na osi, dobrze. Wąsy w drugiej zawieszce wyraźnie krótsze, a łuk haka załamany przy nasadzie. Odmierz materiał na wąsy przed rozcięciem i giń na rogu kowadła w pełnym żarze.",
-      instructor: "Marek Nowak",
-      at: "2026-10-23 09:12",
-    },
-  },
-  {
-    id: "sub-9",
-    taskId: "t1-2",
-    taskName: "Haczyk / zawieszka",
-    participant: "Jan Kowalski",
-    attempt: 1,
-    status: "NEEDS_IMPROVEMENT",
-    comment: "",
-    photos: [p("h11", 14, "hook"), p("h12", 20, "hook")],
-    submittedAt: "2026-10-12 20:05",
-    instructor: "Marek Nowak",
-    revision: 2,
-    stageName: "Kowalstwo podstawowe",
-    assessment: {
-      result: "NEEDS_IMPROVEMENT",
-      comment: "Otwór przesunięty od osi, pęknięcie przy krawędzi. Przebijaj w pełnym żarze, z obu stron.",
-      instructor: "Marek Nowak",
-      at: "2026-10-14 08:30",
-    },
-  },
-  {
-    id: "sub-7",
-    taskId: "t1-16",
-    taskName: "Podkowa",
-    participant: "Jan Kowalski",
-    attempt: 1,
-    status: "PASSED",
-    comment: "",
-    photos: [p("k1", 16, "anvil")],
-    submittedAt: "2026-10-10 16:00",
-    instructor: "Anna Wiśniewska",
-    recordedBy: "Anna Wiśniewska",
-    revision: 1,
-    stageName: "Kowalstwo podstawowe",
-    assessment: { result: "PASSED", comment: "Udział w kursie, podkowa wykonana poprawnie.", instructor: "Anna Wiśniewska", at: "2026-10-10 16:00" },
-  },
-  {
-    id: "sub-3",
-    taskId: "t1-teoria",
-    taskName: "Bezpieczeństwo pracy w kuźni",
-    participant: "Jan Kowalski",
-    attempt: 1,
-    status: "PASSED",
-    comment: "Oparzenia, odpryski do oczu, urazy dłoni, tlenek węgla, pożar. Okulary, skórzane buty, bawełniane ubranie, kleszcze zamiast rąk, woda i gaśnica obok paleniska.",
-    photos: [p("th1", 40, "fire")],
-    submittedAt: "2026-09-28 19:30",
-    instructor: "Marek Nowak",
-    revision: 1,
-    stageName: "Kowalstwo podstawowe",
-    assessment: { result: "PASSED", comment: "Komplet. Pamiętaj o wentylacji przy węglu.", instructor: "Marek Nowak", at: "2026-09-29 08:15" },
-  },
-  {
-    id: "sub-5",
-    taskId: "t1-1",
-    taskName: "Gwóźdź",
-    participant: "Jan Kowalski",
-    attempt: 1,
-    status: "PASSED",
-    comment: "Pręt kwadratowy 8 mm, pięć sztuk.",
-    photos: [p("g1", 12, "nail")],
-    submittedAt: "2026-10-04 17:00",
-    instructor: "Marek Nowak",
-    revision: 1,
-    stageName: "Kowalstwo podstawowe",
-    assessment: { result: "PASSED", comment: "Równe ostrza, łby symetryczne.", instructor: "Marek Nowak", at: "2026-10-05 10:00" },
-  },
-];
-
-export const queue: Submission[] = [
-  {
-    id: "sub-31",
-    taskId: "t1-3",
-    taskName: "Serce [dwa sposoby]",
-    participant: "Piotr Zieliński",
-    attempt: 1,
-    status: "SUBMITTED",
-    comment: "Pierwsze serce z jednego kawałka, drugie składane. Drugie wyszło mniej symetryczne.",
-    photos: [p("q1", 24, "heart"), p("q2", 32, "heart"), p("q3", 16, "heart")],
-    submittedAt: "2026-10-25 21:14",
-    revision: 1,
-    stageName: "Kowalstwo podstawowe",
-  },
-  {
-    id: "sub-30",
-    taskId: "t1-2",
-    taskName: "Haczyk / zawieszka",
-    participant: "Katarzyna Wójcik",
-    attempt: 3,
-    status: "SUBMITTED",
-    comment: "Trzecie podejście. Tym razem odmierzyłam wąsy przed rozcięciem.",
-    photos: [p("q4", 20, "hook"), p("q5", 28, "hook")],
-    submittedAt: "2026-10-25 19:02",
-    revision: 3,
-    stageName: "Kowalstwo podstawowe",
-  },
-  {
-    id: "sub-28",
-    taskId: "t1-5",
-    taskName: "Liść",
-    participant: "Tomasz Lewandowski",
-    attempt: 2,
-    status: "UNDER_REVIEW",
-    comment: "",
-    photos: [p("q6", 26, "leaf"), p("q7", 36, "leaf")],
-    submittedAt: "2026-10-24 16:45",
-    instructor: "Jan Kowalski",
-    revision: 1,
-    stageName: "Kowalstwo podstawowe",
-  },
-  {
-    id: "sub-27",
-    taskId: "t1-1",
-    taskName: "Gwóźdź",
-    participant: "Magdalena Kamińska",
-    attempt: 1,
-    status: "SUBMITTED",
-    comment: "Pięć gwoździ, jeden krzywy — zostawiłam do porównania.",
-    photos: [p("q8", 10, "nail"), p("q9", 18, "nail")],
-    submittedAt: "2026-10-24 12:30",
-    revision: 1,
-    stageName: "Kowalstwo podstawowe",
-  },
-];
-
-export type CourseResult = "PASSED" | "NEEDS_IMPROVEMENT" | null;
-
-/** Participants enrolled in the version, with their state for a course (FR-INS-06). */
-export const courseRoster: { id: string; name: string; result: CourseResult; locked?: boolean }[] = [
-  { id: "c1", name: "Piotr Zieliński", result: null },
-  { id: "c2", name: "Katarzyna Wójcik", result: null },
-  { id: "c3", name: "Tomasz Lewandowski", result: "PASSED" },
-  { id: "c4", name: "Magdalena Kamińska", result: "NEEDS_IMPROVEMENT" },
-  { id: "c5", name: "Ewa Szymańska", result: null, locked: true },
-];
-
 export type UserStatus = "PENDING_APPROVAL" | "ACTIVE" | "REJECTED" | "DEACTIVATED";
 
 export interface AdminUser {
@@ -536,9 +353,3 @@ export const audit = [
   { at: "2026-10-22 11:00", who: "Jan Kowalski", action: "TASK_UPDATED", entity: "Haczyk / zawieszka (wersja 3)" },
   { at: "2026-10-10 16:00", who: "Anna Wiśniewska", action: "COURSE_RESULT_RECORDED", entity: "Kurs Podkowa · Jan Kowalski" },
 ];
-
-export const assessedByMe = [
-  { id: "a1", participant: "Tomasz Lewandowski", task: "Serce [dwa sposoby]", attempt: 1, result: "PASSED", at: "2026-10-22 18:10", photo: p("a1p", 24, "heart") },
-  { id: "a2", participant: "Katarzyna Wójcik", task: "Haczyk / zawieszka", attempt: 2, result: "NEEDS_IMPROVEMENT", at: "2026-10-20 09:45", photo: p("a2p", 30, "hook") },
-  { id: "a3", participant: "Piotr Zieliński", task: "Haczyk / zawieszka", attempt: 1, result: "PASSED", at: "2026-10-18 20:02", photo: p("a3p", 20, "hook") },
-] as const;

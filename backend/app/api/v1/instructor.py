@@ -2,12 +2,12 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
 from app.dependencies.auth import CurrentUser, require_instructor, require_role
-from app.schemas.instructor import CourseItem, CourseParticipant, QueueItem, QueueStatus, ReviewDetail
+from app.schemas.instructor import CourseItem, CourseParticipant, QueueItem, QueuePage, QueueStatus, ReviewDetail
 from app.schemas.submission import AssessedOut, AssessmentIn, CourseResultIn, SubmissionOut
 from app.services import assessment_service, submission_service
 from app.services import instructor_service as svc
@@ -26,6 +26,16 @@ async def queue(
     s: AsyncSession = Session,
 ):
     return await svc.queue(s, i.user, status=status, path_version_id=path_version_id)
+
+
+@router.get("/instructor/assessed", response_model=QueuePage, summary="Moje oceny")
+async def assessed(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    i: CurrentUser = Instructor,
+    s: AsyncSession = Session,
+):
+    return await svc.assessed(s, i.user, limit, offset)
 
 
 @router.get("/instructor/submissions/{submission_id}", response_model=ReviewDetail)

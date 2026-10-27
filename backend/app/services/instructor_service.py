@@ -1,4 +1,4 @@
-"""Instructor queue, details, claim, release and course lists (FR-INS-01…03, FR-INS-05, FR-INS-06, BR-06, BR-26)."""
+"""Instructor queue, details, claim, release, courses and own assessments (FR-INS-01…03, FR-INS-05…07, BR-06, BR-26)."""
 
 import uuid
 from datetime import UTC, datetime
@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.errors import AppError
 from app.models import (
+    Assessment,
     Enrollment,
     LearningPath,
     PathVersion,
@@ -18,7 +19,7 @@ from app.models import (
     TaskRevision,
     User,
 )
-from app.schemas.instructor import CourseItem, CourseParticipant, QueueItem, ReviewDetail
+from app.schemas.instructor import CourseItem, CourseParticipant, QueueItem, QueuePage, ReviewDetail
 from app.services import (
     assessment_service,
     audit_service,
@@ -56,6 +57,7 @@ async def _item(session: AsyncSession, sub: Submission, labels: dict[uuid.UUID, 
     version = await session.get(PathVersion, stage.path_version_id)
     path = await session.get(LearningPath, version.learning_path_id)
     participant = await session.get(User, sub.user_id)
+    instructor = await session.get(User, sub.instructor_id) if sub.instructor_id else None
     rev = (
         await session.get(TaskRevision, sub.task_revision_id)
         if sub.task_revision_id
@@ -71,6 +73,9 @@ async def _item(session: AsyncSession, sub: Submission, labels: dict[uuid.UUID, 
         stage={"id": stage.id, "name": stage.name, "position": stage.position},
         path={"id": path.id, "name": path.name, "version": version.version_number},
         photo_count=photos,
+        instructor={"id": instructor.id, "first_name": instructor.first_name, "last_name": instructor.last_name}
+        if instructor
+        else None,
     )
 
 
@@ -101,6 +106,28 @@ async def queue(
     }
     labels = await _labels(session, stage_ids)
     return [await _item(session, s, labels) for s in subs]
+
+
+async def assessed(session: AsyncSession, instructor: User, limit: int, offset: int) -> QueuePage:
+    """FR-INS-07: my assessments and the course results I recorded, newest first (read only)."""
+    stmt = (
+        select(Submission)
+        .join(Assessment, Assessment.submission_id == Submission.id)
+        .where(Assessment.instructor_id == instructor.id)
+    )
+    total = await session.scalar(select(func.count()).select_from(stmt.subquery()))
+    subs = (
+        (await session.execute(stmt.order_by(Submission.assessed_at.desc()).limit(limit).offset(offset)))
+        .scalars()
+        .all()
+    )
+    stage_ids = set(
+        (await session.execute(select(Task.stage_id).where(Task.id.in_([s.task_id for s in subs])))).scalars()
+    )
+    labels = await _labels(session, stage_ids)
+    return QueuePage(
+        items=[await _item(session, s, labels) for s in subs], total=total or 0, limit=limit, offset=offset
+    )
 
 
 async def _visible(session: AsyncSession, instructor: User, submission_id: uuid.UUID) -> Submission:

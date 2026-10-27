@@ -14,6 +14,15 @@ class QueueItem(BaseModel):
     stage: dict
     path: dict
     photo_count: int
+    # Who claimed, assessed or recorded it; None while waiting in the queue or graded by the system.
+    instructor: dict | None = None
+
+
+class QueuePage(BaseModel):
+    items: list[QueueItem]
+    total: int
+    limit: int
+    offset: int
 
 
 class ReviewDetail(QueueItem):

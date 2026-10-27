@@ -114,6 +114,7 @@ Jedna funkcja liczy statusy całej ścieżki stałą liczbą zapytań (bez N+1);
 - FR-INS-04 Ocena (§12, BR-07).
 - FR-INS-05 Zwolnienie przejętego zgłoszenia (BR-26).
 - FR-INS-06 Kursy: lista uczestników zapisanych na wersję z ich statusem dla kursu; wpisanie wyniku (BR-30).
+- FR-INS-07 Lista własnych ocen i wpisanych wyników kursów, od najnowszych (tylko odczyt). Decyzja PO 2026-10-27 (M12).
 
 ## 4. Wymagania niefunkcjonalne (NFR)
 - NFR-01 Jednolity format błędów: `{"error": {"code", "message", "details?"}}`, również dla 401/404/422.

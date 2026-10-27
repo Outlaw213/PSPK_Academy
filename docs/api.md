@@ -58,6 +58,7 @@ Klient przeglądarkowy wysyła nagłówek `X-Client: web`. Wtedy `refresh_token`
 | GET | **[+]** /instructor/courses?path_version_id= | 200 kursy w zakresie uprawnień | |
 | GET | **[+]** /instructor/courses/{task_id}/participants | 200 uczestnicy z aktywnym zapisem + status kursu (FR-INS-06) | 403 INSTRUCTOR_NOT_AUTHORIZED, 404 |
 | POST | **[+]** /instructor/courses/{task_id}/results | 201 submission + assessment (`user_id`, `result`, `comment`; zdjęcia potem przez `/submissions/{id}/photos` instruktora) | 403 INSTRUCTOR_NOT_AUTHORIZED, 403 SELF_ASSESSMENT_FORBIDDEN, 403 NO_ACTIVE_ENROLLMENT, 409 TASK_LOCKED, 409 TASK_ALREADY_PASSED, 422 ASSESSMENT_COMMENT_REQUIRED |
+| GET | **[+]** /instructor/assessed | 200 własne oceny i wpisane wyniki kursów, najnowsze najpierw; `{items, total, limit, offset}` (FR-INS-07) | |
 
 ### Admin (`ADMIN`)
 | Metoda | Ścieżka | Uwagi |
@@ -109,7 +110,7 @@ Zdjęcie: `multipart/form-data`, pole `file`, jedno na żądanie; zapisywane po 
 Quiz: `POST /tasks/{id}/quiz-attempts` `{answers: [{question_id, option_ids: [...]}]}` → 201 `{submission, score, correct, total, passed, review}`; `review` (poprawne odpowiedzi) tylko przy zaliczeniu, inaczej `null` (BR-32).
 
 **Instruktor** (M7). Zasięg = suma uprawnień do wersji i do etapów (BR-24), bez własnych zgłoszeń (BR-25).
-Kolejka `GET /instructor/submissions?status=&path_version_id=`: `[{submission, participant{id, first_name, last_name}, task{id, label, name, task_type}, stage{id, name, position}, path{id, name, version}, photo_count}]` — `SUBMITTED` w zasięgu + `UNDER_REVIEW` przejęte przez siebie; najstarsze najpierw.
+Kolejka `GET /instructor/submissions?status=&path_version_id=`: `[{submission, participant{id, first_name, last_name}, task{id, label, name, task_type}, stage{id, name, position}, path{id, name, version}, photo_count, instructor{id, first_name, last_name} | null}]` (`instructor` — kto przejął lub ocenił) — `SUBMITTED` w zasięgu + `UNDER_REVIEW` przejęte przez siebie; najstarsze najpierw.
 Szczegóły `GET /instructor/submissions/{id}`: `{submission, participant, task, stage, path, revision (pełna, z kryteriami), previous_attempts[]}`; spoza zasięgu → 404.
 Uprawnienie `POST /admin/instructor-permissions`: dokładnie jedno z `path_version_id` / `stage_id` (inaczej 422 VALIDATION_ERROR); duplikat → 409 PERMISSION_EXISTS.
 `GET /submissions/{id}/photos/{photo_id}`: właściciel, instruktor z uprawnieniem do zadania albo admin; inni → 404.

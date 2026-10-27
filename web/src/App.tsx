@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, ClipboardCheck, GraduationCap, History, Inbox, KeyRound, LogOut, Moon, Route as RouteIcon, ScrollText, ShieldCheck, Sun, SunMoon, Users, type LucideIcon } from "lucide-react";
-import { myHistory, queue as queueSeed, stages as stagesSeed, users as usersSeed } from "./mock/data";
-import type { Role } from "./api/types";
+import { stages as stagesSeed, users as usersSeed } from "./mock/data";
+import type { QueueItem, Role } from "./api/types";
+import { get } from "./api/client";
+import { useApi } from "./lib/useApi";
 import { useSession } from "./api/session";
 import { errorText } from "./lib/errors";
-import { StoreContext, type Draft, type Route, type Store } from "./store";
+import { StoreContext, type Route, type Store } from "./store";
 import { Button, Field, Group, inputClass, Row, Segmented, Sheet, Toast, cx } from "./components/ui";
 import { roleLabel } from "./lib/status";
 import { AuthScreen, Logo } from "./screens/auth";
@@ -96,10 +98,7 @@ function Panel({ logout }: { logout: () => Promise<void> }) {
   const [role, setRole] = useState<Role>(me.roles[0]);
   const [changePw, setChangePw] = useState(false);
   const [stages, setStagesRaw] = useState(stagesSeed);
-  const [history, setHistoryRaw] = useState(myHistory);
-  const [queue, setQueueRaw] = useState(queueSeed);
   const [users, setUsersRaw] = useState(usersSeed);
-  const [draft, setDraft] = useState<Draft | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [account, setAccount] = useState(false);
   const [theme, setTheme] = useState<Theme>(readTheme);
@@ -121,7 +120,14 @@ function Panel({ logout }: { logout: () => Promise<void> }) {
   }, [theme]);
 
   const pendingUsers = users.filter((u) => u.status === "PENDING_APPROVAL").length;
-  const openQueue = queue.filter((q) => q.status === "SUBMITTED").length;
+
+  // Badge of the queue: what waits to be claimed, from the backend; refreshed on every navigation.
+  const [nav, setNav] = useState(0);
+  const isInstructor = me.roles.includes("INSTRUCTOR");
+  const { data: openQueue } = useApi(
+    () => (isInstructor ? get<QueueItem[]>("/instructor/submissions?status=SUBMITTED").then((l) => l.length) : Promise.resolve(0)),
+    [isInstructor, nav],
+  );
 
   const tabs: Record<Role, Tab[]> = {
     PARTICIPANT: [
@@ -129,7 +135,7 @@ function Panel({ logout }: { logout: () => Promise<void> }) {
       { id: "history", label: "Zgłoszenia", icon: History, root: { name: "history" } },
     ],
     INSTRUCTOR: [
-      { id: "queue", label: "Kolejka", icon: Inbox, root: { name: "queue" }, badge: openQueue },
+      { id: "queue", label: "Kolejka", icon: Inbox, root: { name: "queue" }, badge: openQueue ?? 0 },
       { id: "courses", label: "Kursy", icon: GraduationCap, root: { name: "courses" } },
       { id: "assessed", label: "Ocenione", icon: ClipboardCheck, root: { name: "assessed" } },
     ],
@@ -150,7 +156,10 @@ function Panel({ logout }: { logout: () => Promise<void> }) {
   const stack = stacks[tabId] ?? [tab.root];
   const route = stack[stack.length - 1];
 
-  const scrollTop = () => window.scrollTo({ top: 0 });
+  const scrollTop = () => {
+    window.scrollTo({ top: 0 });
+    setNav((n) => n + 1);
+  };
   const push = useCallback(
     (r: Route) => {
       setStacks((s) => ({ ...s, [tabId]: [...(s[tabId] ?? [tab.root]), r] }));
@@ -176,19 +185,13 @@ function Panel({ logout }: { logout: () => Promise<void> }) {
     () => ({
       stages,
       setStages: setStagesRaw,
-      history,
-      setHistory: setHistoryRaw,
-      queue,
-      setQueue: setQueueRaw,
       users,
       setUsers: setUsersRaw,
-      draft,
-      setDraft,
       toast,
       push,
       pop,
     }),
-    [stages, history, queue, users, draft, toast, push, pop],
+    [stages, users, toast, push, pop],
   );
 
   const selectTab = (id: string) => {
@@ -251,7 +254,7 @@ function Panel({ logout }: { logout: () => Promise<void> }) {
         <div className="relative min-w-0 flex-1">
           {/* Account button for phones, floating at the top right of every screen */}
           <div className="fixed right-[max(8px,env(safe-area-inset-right,0px))] top-[calc(env(safe-area-inset-top,0px)+4px)] z-30 lg:hidden">{avatar}</div>
-          {role !== "PARTICIPANT" && (
+          {role === "ADMIN" && (
             <p className="mx-auto mt-[calc(env(safe-area-inset-top,0px)+8px)] w-fit rounded-full bg-warn/14 px-3 py-1 text-footnote font-semibold text-warn lg:mt-3">
               Dane przykładowe — ten widok zostanie podłączony do systemu w kolejnym etapie
             </p>
