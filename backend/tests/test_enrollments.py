@@ -99,3 +99,16 @@ async def test_unknown_user_or_version_404(api, make_user):
     _, v, _ = await _open_version(a)
     nope = "00000000-0000-4000-8000-000000000000"
     await a.req("POST", "/admin/enrollments", 404, json={"user_id": nope, "path_version_id": v["id"]})
+
+
+async def test_fr_adm03_list_shows_progress(api, make_user, committed):
+    from tests.submission_helpers import pass_in_db, setup
+
+    a, _, _, ids, u, _, e = await setup(api, make_user)
+    [row] = (await a.req("GET", "/admin/enrollments"))["items"]
+    assert row["progress"] == {"completed": 0, "total": 4}
+    await pass_in_db(committed, ids["bhp"], u)
+    [row] = (await a.req("GET", "/admin/enrollments"))["items"]
+    assert row["progress"] == {"completed": 1, "total": 4}
+    cancelled = await a.req("POST", f"/admin/enrollments/{e['id']}/cancel")
+    assert cancelled["progress"] == {"completed": 1, "total": 4}  # what was passed stays passed

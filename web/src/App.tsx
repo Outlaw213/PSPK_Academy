@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, ClipboardCheck, GraduationCap, History, Inbox, KeyRound, LogOut, Moon, Route as RouteIcon, ScrollText, ShieldCheck, Sun, SunMoon, Users, type LucideIcon } from "lucide-react";
-import { stages as stagesSeed, users as usersSeed } from "./mock/data";
-import type { QueueItem, Role } from "./api/types";
+import { stages as stagesSeed } from "./mock/data";
+import type { AdminUser, Page, QueueItem, Role } from "./api/types";
 import { get } from "./api/client";
 import { useApi } from "./lib/useApi";
 import { useSession } from "./api/session";
@@ -13,7 +13,7 @@ import { AuthScreen, Logo } from "./screens/auth";
 import { QuizPreviewScreen, QuizScreen } from "./screens/quiz";
 import { DraftScreen, HistoryScreen, PathScreen, PathsScreen, SubmissionScreen, TaskScreen } from "./screens/participant";
 import { AssessedScreen, CourseScreen, CoursesScreen, QueueScreen, ReviewScreen } from "./screens/instructor";
-import { AdminPathsScreen, AuditScreen, EnrollmentsScreen, PermissionsScreen, UsersScreen } from "./screens/admin";
+import { AdminPathsScreen, AdminSubmissionScreen, AuditScreen, EnrollmentsScreen, PermissionsScreen, UsersScreen } from "./screens/admin";
 import { TaskEditScreen, VersionScreen } from "./screens/builder";
 
 interface Tab {
@@ -66,6 +66,8 @@ function render(r: Route) {
       return <PermissionsScreen />;
     case "audit":
       return <AuditScreen />;
+    case "admin-submission":
+      return <AdminSubmissionScreen id={r.id} />;
   }
 }
 
@@ -76,6 +78,9 @@ function readTheme(): Theme {
     return "system";
   }
 }
+
+// Screens still on sample data until the path builder is connected (M12c2).
+const SAMPLE_DATA = new Set<Route["name"]>(["admin-paths", "version", "task-edit"]);
 
 const roleName = (r: Role) => (r === "PARTICIPANT" ? "Uczestnik" : r === "INSTRUCTOR" ? "Instruktor" : "Admin");
 
@@ -98,7 +103,6 @@ function Panel({ logout }: { logout: () => Promise<void> }) {
   const [role, setRole] = useState<Role>(me.roles[0]);
   const [changePw, setChangePw] = useState(false);
   const [stages, setStagesRaw] = useState(stagesSeed);
-  const [users, setUsersRaw] = useState(usersSeed);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [account, setAccount] = useState(false);
   const [theme, setTheme] = useState<Theme>(readTheme);
@@ -119,7 +123,6 @@ function Panel({ logout }: { logout: () => Promise<void> }) {
     }
   }, [theme]);
 
-  const pendingUsers = users.filter((u) => u.status === "PENDING_APPROVAL").length;
 
   // Badge of the queue: what waits to be claimed, from the backend; refreshed on every navigation.
   const [nav, setNav] = useState(0);
@@ -127,6 +130,12 @@ function Panel({ logout }: { logout: () => Promise<void> }) {
   const { data: openQueue } = useApi(
     () => (isInstructor ? get<QueueItem[]>("/instructor/submissions?status=SUBMITTED").then((l) => l.length) : Promise.resolve(0)),
     [isInstructor, nav],
+  );
+  // Badge of the user list: registrations waiting for approval.
+  const isAdmin = me.roles.includes("ADMIN");
+  const { data: pendingUsers } = useApi(
+    () => (isAdmin ? get<Page<AdminUser>>("/admin/users?status=PENDING_APPROVAL&limit=1").then((p) => p.total) : Promise.resolve(0)),
+    [isAdmin, nav],
   );
 
   const tabs: Record<Role, Tab[]> = {
@@ -140,7 +149,7 @@ function Panel({ logout }: { logout: () => Promise<void> }) {
       { id: "assessed", label: "Ocenione", icon: ClipboardCheck, root: { name: "assessed" } },
     ],
     ADMIN: [
-      { id: "users", label: "Użytkownicy", icon: Users, root: { name: "users" }, badge: pendingUsers },
+      { id: "users", label: "Użytkownicy", icon: Users, root: { name: "users" }, badge: pendingUsers ?? 0 },
       { id: "admin-paths", label: "Ścieżki", icon: BookOpen, root: { name: "admin-paths" } },
       { id: "enrollments", label: "Zapisy", icon: RouteIcon, root: { name: "enrollments" } },
       { id: "permissions", label: "Uprawnienia", icon: ShieldCheck, root: { name: "permissions" } },
@@ -185,13 +194,11 @@ function Panel({ logout }: { logout: () => Promise<void> }) {
     () => ({
       stages,
       setStages: setStagesRaw,
-      users,
-      setUsers: setUsersRaw,
       toast,
       push,
       pop,
     }),
-    [stages, users, toast, push, pop],
+    [stages, toast, push, pop],
   );
 
   const selectTab = (id: string) => {
@@ -254,7 +261,7 @@ function Panel({ logout }: { logout: () => Promise<void> }) {
         <div className="relative min-w-0 flex-1">
           {/* Account button for phones, floating at the top right of every screen */}
           <div className="fixed right-[max(8px,env(safe-area-inset-right,0px))] top-[calc(env(safe-area-inset-top,0px)+4px)] z-30 lg:hidden">{avatar}</div>
-          {role === "ADMIN" && (
+          {(SAMPLE_DATA.has(route.name) || (route.name === "quiz" && route.preview)) && (
             <p className="mx-auto mt-[calc(env(safe-area-inset-top,0px)+8px)] w-fit rounded-full bg-warn/14 px-3 py-1 text-footnote font-semibold text-warn lg:mt-3">
               Dane przykładowe — ten widok zostanie podłączony do systemu w kolejnym etapie
             </p>

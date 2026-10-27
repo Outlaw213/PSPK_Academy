@@ -104,12 +104,17 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] Kontener `web` (nginx) w Docker Compose; testy Playwright (`web/e2e/`) na jednorazowym stosie z danymi startowymi; zrzuty ekranu dla PO
 **DoD:** uczestnik przechodzi pełny scenariusz w przeglądarce na prawdziwym API; statusy wyłącznie z backendu.
 
-## M12b — Panel WWW: instruktor ← JESTEŚMY TUTAJ
+## M12b — Panel WWW: instruktor ✔ zaakceptowane 2026-10-27
 - [x] Kolejka, ocena ze zdjęciami (przejęcie, zwolnienie, zaliczenie, do poprawy), kursy, „Ocenione” (`GET /instructor/assessed`, FR-INS-07, `test_instructor_assessed.py`)
 - [x] Testy Playwright instruktora (`web/e2e/instructor.spec.ts`, w tym wyścig o przejęcie), zrzuty dla PO
 
-## M12c — Panel WWW: admin
-- [ ] Użytkownicy, kreator ścieżek (wersje, etapy, zadania, quiz, pliki, kolejność), zapisy, uprawnienia, dziennik, zgłoszenia; usunięcie danych przykładowych
+## M12c1 — Panel WWW: admin — użytkownicy, zapisy, uprawnienia, dziennik ← JESTEŚMY TUTAJ
+- [x] Użytkownicy (akceptacja, role, aktywacja, hasło, nowe konto), zapisy z postępem (`progress` w API), uprawnienia instruktorów
+- [x] „Dziennik”: przełącznik Zgłoszenia | Zdarzenia (decyzja PO 2026-10-27), szczegóły zgłoszenia
+- [x] Testy Playwright admina (`web/e2e/admin.spec.ts`), zrzuty dla PO
+
+## M12c2 — Panel WWW: kreator ścieżek
+- [ ] Ścieżki i wersje (kopia, przyjmowanie zapisów), etapy, zadania wszystkich typów, quiz, zdjęcia wzorcowe, PDF, kolejność, przenoszenie, wyłączanie; usunięcie danych przykładowych
 
 ## M11a — Staging na Proxmoxie (ADR-23)
 - [ ] Wymaga: Proxmox VE 9 (Q-50), wolny RAM (Q-49), DNS `pspk.pl` w Cloudflare (Q-47), decyzja o kopiach (Q-46) — szczegóły w `docs/infrastructure.md`

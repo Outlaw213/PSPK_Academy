@@ -77,6 +77,7 @@ export async function api<T>(method: string, path: string, data?: unknown): Prom
 export const get = <T>(path: string) => api<T>("GET", path);
 export const post = <T>(path: string, data?: unknown) => api<T>("POST", path, data);
 export const patch = <T>(path: string, data?: unknown) => api<T>("PATCH", path, data);
+export const put = <T>(path: string, data?: unknown) => api<T>("PUT", path, data);
 export const del = (path: string) => api<null>("DELETE", path);
 
 /** Multipart upload (one file per request, field `file`). */

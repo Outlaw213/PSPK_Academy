@@ -105,3 +105,25 @@ export async function shot(page: Page, name: string, project: string) {
   await page.waitForLoadState("networkidle");
   await page.screenshot({ path: `e2e/screenshots/${project}-${name}.png`, fullPage: false });
 }
+
+/** Self-registration (the account waits for approval). */
+export async function register(request: APIRequestContext, first: string) {
+  const email = newEmail();
+  const password = "haslo-rejestracji-e2e-2026";
+  const r = await request.post(`${API}/auth/register`, { data: { email, password, first_name: first, last_name: "Nowa" } });
+  expect(r.status()).toBe(201);
+  return { email, password, name: `${first} Nowa` };
+}
+
+/** An active account created by the admin, not enrolled anywhere and without permissions. */
+export async function createUser(request: APIRequestContext, first: string, roles: string[]) {
+  const admin = await token(request, ADMIN);
+  const email = newEmail();
+  const password = "haslo-konta-e2e-2026";
+  const u = await call<{ id: string }>(request, admin, "POST", "/admin/users", { email, password, first_name: first, last_name: "Konto", roles });
+  return { id: u.id, email, password, name: `${first} Konto` };
+}
+
+export async function canLogin(request: APIRequestContext, email: string, password: string) {
+  return (await request.post(`${API}/auth/login`, { data: { email, password } })).ok();
+}

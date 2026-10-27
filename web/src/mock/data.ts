@@ -87,13 +87,6 @@ export interface Stage {
   tasks: Task[];
 }
 
-export const me = {
-  firstName: "Jan",
-  lastName: "Kowalski",
-  email: "jan.kowalski@example.pl",
-  roles: ["PARTICIPANT", "INSTRUCTOR", "ADMIN"] as Role[],
-};
-
 const img = (id: string, url: string): Photo => ({ id, tone: 0, motif: "hook", url });
 
 const kinds = { P: "PRACTICAL", K: "COURSE", T: "THEORY", Q: "QUIZ" } as const;
@@ -305,51 +298,4 @@ export const stages: Stage[] = [
       t(2, 14, "K", "Damast puszkowy", 1, "LOCKED", course),
     ]),
   },
-];
-
-export type UserStatus = "PENDING_APPROVAL" | "ACTIVE" | "REJECTED" | "DEACTIVATED";
-
-export interface AdminUser {
-  id: string;
-  name: string;
-  email: string;
-  roles: Role[];
-  status: UserStatus;
-  created: string;
-}
-
-export const users: AdminUser[] = [
-  { id: "u1", name: "Ewa Szymańska", email: "ewa.s@example.pl", roles: ["PARTICIPANT"], status: "PENDING_APPROVAL", created: "2026-10-25" },
-  { id: "u2", name: "Michał Dąbrowski", email: "m.dabrowski@example.pl", roles: ["PARTICIPANT"], status: "PENDING_APPROVAL", created: "2026-10-24" },
-  { id: "u3", name: "Jan Kowalski", email: "jan.kowalski@example.pl", roles: ["PARTICIPANT", "INSTRUCTOR", "ADMIN"], status: "ACTIVE", created: "2026-09-01" },
-  { id: "u4", name: "Marek Nowak", email: "marek.nowak@example.pl", roles: ["INSTRUCTOR"], status: "ACTIVE", created: "2026-09-01" },
-  { id: "u5", name: "Anna Wiśniewska", email: "a.wisniewska@example.pl", roles: ["INSTRUCTOR", "PARTICIPANT"], status: "ACTIVE", created: "2026-09-03" },
-  { id: "u6", name: "Piotr Zieliński", email: "piotr.z@example.pl", roles: ["PARTICIPANT"], status: "ACTIVE", created: "2026-09-10" },
-  { id: "u7", name: "Katarzyna Wójcik", email: "k.wojcik@example.pl", roles: ["PARTICIPANT"], status: "ACTIVE", created: "2026-09-12" },
-  { id: "u8", name: "Robert Krawczyk", email: "r.krawczyk@example.pl", roles: ["PARTICIPANT"], status: "DEACTIVATED", created: "2026-09-15" },
-];
-
-export const enrollments = [
-  { id: "e1", user: "Jan Kowalski", path: "Podstawy kowalstwa", version: 1, status: "ACTIVE", progress: [3, 35], at: "2026-09-02" },
-  { id: "e2", user: "Piotr Zieliński", path: "Podstawy kowalstwa", version: 1, status: "ACTIVE", progress: [5, 35], at: "2026-09-10" },
-  { id: "e3", user: "Katarzyna Wójcik", path: "Podstawy kowalstwa", version: 1, status: "ACTIVE", progress: [3, 35], at: "2026-09-12" },
-  { id: "e4", user: "Tomasz Lewandowski", path: "Podstawy kowalstwa", version: 1, status: "ACTIVE", progress: [7, 35], at: "2026-09-12" },
-  { id: "e5", user: "Robert Krawczyk", path: "Podstawy kowalstwa", version: 1, status: "CANCELLED", progress: [1, 35], at: "2026-09-15" },
-  { id: "e6", user: "Magdalena Kamińska", path: "Podstawy kowalstwa", version: 1, status: "ACTIVE", progress: [3, 35], at: "2026-10-01" },
-] as const;
-
-export const permissions = [
-  { id: "pm1", instructor: "Marek Nowak", scope: "Podstawy kowalstwa v1", kind: "Cała wersja" },
-  { id: "pm2", instructor: "Anna Wiśniewska", scope: "Podstawy kowalstwa v1 · Kowalstwo podstawowe", kind: "Etap" },
-  { id: "pm3", instructor: "Jan Kowalski", scope: "Podstawy kowalstwa v1 · Kowalstwo podstawowe", kind: "Etap" },
-];
-
-export const audit = [
-  { at: "2026-10-26 08:02", who: "Jan Kowalski", action: "SUBMISSION_CLAIMED", entity: "Liść · próba 2" },
-  { at: "2026-10-25 21:14", who: "Piotr Zieliński", action: "SUBMISSION_SUBMITTED", entity: "Serce · próba 1" },
-  { at: "2026-10-25 20:40", who: "Ewa Szymańska", action: "USER_REGISTERED", entity: "Użytkownik" },
-  { at: "2026-10-25 19:02", who: "Katarzyna Wójcik", action: "SUBMISSION_SUBMITTED", entity: "Haczyk / zawieszka · próba 3" },
-  { at: "2026-10-23 09:12", who: "Marek Nowak", action: "SUBMISSION_ASSESSED", entity: "Haczyk / zawieszka · próba 2" },
-  { at: "2026-10-22 11:00", who: "Jan Kowalski", action: "TASK_UPDATED", entity: "Haczyk / zawieszka (wersja 3)" },
-  { at: "2026-10-10 16:00", who: "Anna Wiśniewska", action: "COURSE_RESULT_RECORDED", entity: "Kurs Podkowa · Jan Kowalski" },
 ];

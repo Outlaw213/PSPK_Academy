@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.errors import AppError
 from app.models import Enrollment, LearningPath, PathVersion, Stage, Submission, Task, User, UserRole
 from app.models.enums import OPEN_SUBMISSION_STATUSES
-from app.schemas.enrollment import EnrollmentOut, EnrollmentPage, PathRef, UserRef
+from app.schemas.enrollment import EnrollmentOut, EnrollmentPage, PathRef, Progress, UserRef
 from app.services import audit_service, task_service
 
 
@@ -26,6 +26,7 @@ async def to_out(session: AsyncSession, e: Enrollment) -> EnrollmentOut:
     version = await session.get(PathVersion, e.path_version_id)
     path = await session.get(LearningPath, e.learning_path_id)
     user = await session.get(User, e.user_id)
+    state = await task_service.compute_path_statuses(session, e)
     return EnrollmentOut(
         id=e.id,
         status=e.status,
@@ -35,6 +36,7 @@ async def to_out(session: AsyncSession, e: Enrollment) -> EnrollmentOut:
         enrolled_at=e.enrolled_at,
         completed_at=e.completed_at,
         cancelled_at=e.cancelled_at,
+        progress=Progress(completed=state.completed, total=state.total),
     )
 
 

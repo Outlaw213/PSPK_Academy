@@ -6,12 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel, model_validator
 
 from app.schemas.content import AttachmentOut, MaterialOut
-from app.schemas.enrollment import PathRef
-
-
-class Progress(BaseModel):
-    completed: int
-    total: int
+from app.schemas.enrollment import PathRef, Progress
 
 
 class MyPath(BaseModel):

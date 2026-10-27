@@ -233,3 +233,78 @@ export interface CourseParticipant {
   status: TaskStatus;
   attempts: number;
 }
+
+// --- admin (M12c) ---
+
+export type AdminUser = User;
+
+export interface UserRef extends PersonRef {
+  email: string;
+}
+
+export interface Enrollment {
+  id: string;
+  status: MyPath["status"];
+  path_version_id: string;
+  path: PathRef;
+  user: UserRef;
+  enrolled_at: string;
+  completed_at: string | null;
+  cancelled_at: string | null;
+  progress: Progress;
+}
+
+export interface Permission {
+  id: string;
+  scope: "PATH_VERSION" | "STAGE";
+  instructor: UserRef;
+  path: PathRef & { path_version_id: string };
+  stage: { id: string; name: string; position: number } | null;
+  created_at: string;
+}
+
+export interface AuditItem {
+  id: string;
+  created_at: string;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  user: UserRef | null; // null = done by the system
+  metadata: Record<string, unknown>;
+}
+
+export interface AdminSubmissionItem extends QueueItem {
+  participant: UserRef;
+}
+
+export interface AdminSubmissionDetail extends AdminSubmissionItem {
+  revision: Revision;
+  attempts: Submission[];
+}
+
+export interface PathSummary {
+  id: string;
+  name: string;
+  description: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Version {
+  id: string;
+  learning_path_id: string;
+  version_number: number;
+  description: string;
+  is_active: boolean; // accepts new enrollments
+  copied_from_version_id: string | null;
+  created_at: string;
+}
+
+export interface PathDetail extends PathSummary {
+  versions: Version[];
+}
+
+export interface VersionDetail extends Version {
+  path_name: string;
+  stages: { id: string; name: string; description: string; position: number; tasks: { id: string; is_active: boolean; label: string | null; position: number }[] }[];
+}

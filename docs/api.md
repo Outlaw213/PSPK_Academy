@@ -81,7 +81,7 @@ Klient przeglądarkowy wysyła nagłówek `X-Client: web`. Wtedy `refresh_token`
 | PUT | **[+]** /admin/tasks/{id}/stage | przeniesienie zadania do innego etapu tej samej wersji (na koniec) |
 | POST | **[+]** /admin/tasks/{id}/deactivate, /activate | BR-20 → 409 TASK_HAS_PENDING_SUBMISSIONS |
 | PUT | **[+]** /admin/stages/{id}/tasks/order, /admin/path-versions/{id}/stages/order | zmiana kolejności całej listy w jednej transakcji (BR-16) |
-| GET / POST | /admin/enrollments | lista z filtrami (`path_version_id`, `user_id`, `status`); utworzenie → 201 (albo 200 przy reaktywacji anulowanego zapisu, Q-45), 409 ALREADY_ENROLLED, 409 PATH_VERSION_INACTIVE, 422 USER_NOT_PARTICIPANT |
+| GET / POST | /admin/enrollments | lista z filtrami (`path_version_id`, `user_id`, `status`), każdy zapis z **[M12]** `progress{completed, total}` (wg `task_service`); utworzenie → 201 (albo 200 przy reaktywacji anulowanego zapisu, Q-45), 409 ALREADY_ENROLLED, 409 PATH_VERSION_INACTIVE, 422 USER_NOT_PARTICIPANT |
 | POST | **[+]** /admin/enrollments/{id}/cancel | BR-29 |
 | GET / POST | /admin/instructor-permissions | lista z filtrami; nadanie `{instructor_id, path_version_id \| stage_id}` → 422 USER_NOT_INSTRUCTOR |
 | DELETE | **[+]** /admin/instructor-permissions/{id} | odebranie + automatyczny release (BR-26) |

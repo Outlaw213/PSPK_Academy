@@ -1,6 +1,6 @@
-// Navigation, toasts, and the sample data of the admin screens not yet connected to the API (M12c).
+// Navigation, toasts, and the sample data of the path builder, not yet connected to the API (M12c2).
 import { createContext, useContext } from "react";
-import type { AdminUser, Stage } from "./mock/data";
+import type { Stage } from "./mock/data";
 
 export type Route =
   | { name: "paths" }
@@ -21,13 +21,12 @@ export type Route =
   | { name: "task-edit"; taskId: string }
   | { name: "enrollments" }
   | { name: "permissions" }
-  | { name: "audit" };
+  | { name: "audit" }
+  | { name: "admin-submission"; id: string };
 
 export interface Store {
   stages: Stage[];
   setStages: (f: (s: Stage[]) => Stage[]) => void;
-  users: AdminUser[];
-  setUsers: (f: (s: AdminUser[]) => AdminUser[]) => void;
   toast: (msg: string) => void;
   push: (r: Route) => void;
   pop: () => void;

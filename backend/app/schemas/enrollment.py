@@ -22,6 +22,11 @@ class UserRef(BaseModel):
     last_name: str
 
 
+class Progress(BaseModel):
+    completed: int
+    total: int
+
+
 class EnrollmentOut(BaseModel):
     id: uuid.UUID
     status: str
@@ -31,6 +36,7 @@ class EnrollmentOut(BaseModel):
     enrolled_at: datetime
     completed_at: datetime | None
     cancelled_at: datetime | None
+    progress: Progress  # computed by task_service, like the participant's own view
 
 
 class EnrollmentPage(BaseModel):
