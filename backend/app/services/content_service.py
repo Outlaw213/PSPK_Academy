@@ -6,6 +6,7 @@ Positions are unique per parent but DEFERRABLE, so reorders run inside one trans
 
 import uuid
 from collections import defaultdict
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from sqlalchemy import func, select, text, update
@@ -22,11 +23,17 @@ from app.models import (
     Stage,
     Submission,
     Task,
+    TaskMaterial,
     TaskRevision,
     TaskRevisionAttachment,
+    TaskRevisionMaterial,
     User,
 )
 from app.schemas.content import (
+    AttachmentOut,
+    AttachmentRef,
+    MaterialOut,
+    MaterialRef,
     OptionOut,
     PathDetail,
     PathIn,
@@ -71,6 +78,25 @@ CONTENT_FIELDS = (
 
 def not_found() -> AppError:
     return AppError("NOT_FOUND", "Not found.", 404)
+
+
+def unknown_file() -> AppError:
+    return AppError("UNKNOWN_FILE", "Materials and attachments must be files of this task, each listed once.", 422)
+
+
+@dataclass
+class PdfFile:
+    title: str
+    storage_key: str
+    file_size: int
+
+
+@dataclass
+class RevisionFiles:
+    """Files of a revision being written: (material_id, caption) and PDFs, in order (Q-43, BR-33)."""
+
+    materials: list[tuple[uuid.UUID, str | None]] = field(default_factory=list)
+    pdfs: list[PdfFile] = field(default_factory=list)
 
 
 async def _get(session: AsyncSession, model, obj_id: uuid.UUID, lock: bool = False):
@@ -187,9 +213,28 @@ async def _copy_structure(session: AsyncSession, actor: User, source: PathVersio
             new_task = Task(stage_id=new_stage.id, position=t.position, is_active=t.is_active)
             session.add(new_task)
             await session.flush()
-            current = await _current_revision(session, t.id)
-            content = TaskContent.model_validate((await load_revisions(session, [current.id]))[current.id].model_dump())
-            await _insert_revision(session, actor, new_task.id, 1, content)
+            current = await current_revision(session, t.id)
+            current_out = (await load_revisions(session, [current.id]))[current.id]
+            content, files = await resolve_files(
+                session, t.id, TaskContent.model_validate(current_out.model_dump()), None
+            )
+            # Reference photos belong to a task: the copy gets its own rows for the same files on disk.
+            copied = []
+            for material_id, caption in files.materials:
+                src = await session.get(TaskMaterial, material_id)
+                m = TaskMaterial(
+                    task_id=new_task.id,
+                    **{
+                        c: getattr(src, c)
+                        for c in ("storage_key", "original_filename", "mime_type", "file_size", "width", "height")
+                    },
+                    created_by=actor.id,
+                )
+                session.add(m)
+                await session.flush()
+                copied.append((m.id, caption))
+            files.materials = copied
+            await insert_revision(session, actor, new_task.id, 1, content, files)
 
     for perm in (
         await session.execute(
@@ -219,7 +264,7 @@ async def update_version(session: AsyncSession, actor: User, version_id: uuid.UU
 # --- revisions ---------------------------------------------------------------------------------
 
 
-async def _current_revision(session: AsyncSession, task_id: uuid.UUID) -> TaskRevision:
+async def current_revision(session: AsyncSession, task_id: uuid.UUID) -> TaskRevision:
     """ADR-14: the current revision is the highest revision_number."""
     stmt = (
         select(TaskRevision)
@@ -259,13 +304,37 @@ async def load_revisions(session: AsyncSession, revision_ids: list[uuid.UUID]) -
             QuestionOut(id=q.id, position=q.position, text=q.text, kind=q.kind, options=options[q.id])
         )
     links: dict[uuid.UUID, list[VideoLinkOut]] = defaultdict(list)
-    link_rows = await session.execute(
+    pdfs: dict[uuid.UUID, list[AttachmentOut]] = defaultdict(list)
+    att_rows = await session.execute(
         select(TaskRevisionAttachment)
-        .where(TaskRevisionAttachment.revision_id.in_(revision_ids), TaskRevisionAttachment.kind == "VIDEO_LINK")
+        .where(TaskRevisionAttachment.revision_id.in_(revision_ids))
         .order_by(TaskRevisionAttachment.position)
     )
-    for a in link_rows.scalars():
-        links[a.revision_id].append(VideoLinkOut(id=a.id, position=a.position, title=a.title, url=a.url or ""))
+    for a in att_rows.scalars():
+        if a.kind == "VIDEO_LINK":
+            links[a.revision_id].append(VideoLinkOut(id=a.id, position=a.position, title=a.title, url=a.url or ""))
+        else:  # links and PDFs share the position sequence; PDFs are numbered on their own
+            n = len(pdfs[a.revision_id]) + 1
+            pdfs[a.revision_id].append(AttachmentOut(id=a.id, position=n, title=a.title, file_size=a.file_size or 0))
+    materials: dict[uuid.UUID, list[MaterialOut]] = defaultdict(list)
+    mat_rows = await session.execute(
+        select(TaskRevisionMaterial, TaskMaterial)
+        .join(TaskMaterial, TaskMaterial.id == TaskRevisionMaterial.material_id)
+        .where(TaskRevisionMaterial.revision_id.in_(revision_ids))
+        .order_by(TaskRevisionMaterial.position)
+    )
+    for rm, m in mat_rows.all():
+        materials[rm.revision_id].append(
+            MaterialOut(
+                id=m.id,
+                position=rm.position,
+                caption=rm.caption,
+                mime_type=m.mime_type,
+                file_size=m.file_size,
+                width=m.width,
+                height=m.height,
+            )
+        )
     return {
         r.id: RevisionOut(
             id=r.id,
@@ -275,6 +344,8 @@ async def load_revisions(session: AsyncSession, revision_ids: list[uuid.UUID]) -
             **{f: getattr(r, f) for f in CONTENT_FIELDS},
             questions=by_rev_q[r.id],
             video_links=links[r.id],
+            materials=materials[r.id],
+            attachments=pdfs[r.id],
         )
         for r in revs
     }
@@ -291,11 +362,64 @@ def _content_of(rev: RevisionOut) -> dict:
         for q in rev.questions
     ]
     data["video_links"] = [{"title": v.title, "url": v.url} for v in rev.video_links]
+    data["materials"] = [{"id": m.id, "caption": m.caption} for m in rev.materials]
+    data["attachments"] = [{"id": a.id, "title": a.title} for a in rev.attachments]
     return _comparable(TaskContent.model_validate(data))
 
 
-async def _insert_revision(
-    session: AsyncSession, actor: User, task_id: uuid.UUID, number: int, c: TaskContent
+async def resolve_files(
+    session: AsyncSession, task_id: uuid.UUID, content: TaskContent, current: RevisionOut | None
+) -> tuple[TaskContent, RevisionFiles]:
+    """Lists left out keep the current ones; every file must belong to `task_id`, once (UNKNOWN_FILE).
+    Returns the content with PDF titles filled in (for comparison) and the files to write."""
+    materials = content.materials
+    if materials is None:
+        materials = [MaterialRef(id=m.id, caption=m.caption) for m in current.materials] if current else []
+    refs = content.attachments
+    if refs is None:
+        refs = [AttachmentRef(id=a.id, title=a.title) for a in current.attachments] if current else []
+
+    m_ids = [m.id for m in materials]
+    if len(set(m_ids)) != len(m_ids):
+        raise unknown_file()
+    if m_ids:
+        found = await session.scalar(
+            select(func.count())
+            .select_from(TaskMaterial)
+            .where(TaskMaterial.id.in_(m_ids), TaskMaterial.task_id == task_id)
+        )
+        if found != len(m_ids):
+            raise unknown_file()
+
+    rows = {}
+    if refs:
+        rows = {
+            a.id: a
+            for a in (
+                await session.execute(
+                    select(TaskRevisionAttachment)
+                    .join(TaskRevision, TaskRevision.id == TaskRevisionAttachment.revision_id)
+                    .where(
+                        TaskRevisionAttachment.id.in_([r.id for r in refs]),
+                        TaskRevisionAttachment.kind == "PDF",
+                        TaskRevision.task_id == task_id,
+                    )
+                )
+            ).scalars()
+        }
+    if len(rows) != len(refs) or len({rows[r.id].storage_key for r in refs}) != len(refs):
+        raise unknown_file()
+    refs = [AttachmentRef(id=r.id, title=r.title or rows[r.id].title) for r in refs]
+
+    files = RevisionFiles(
+        materials=[(m.id, m.caption) for m in materials],
+        pdfs=[PdfFile(r.title, rows[r.id].storage_key, rows[r.id].file_size or 0) for r in refs],
+    )
+    return content.model_copy(update={"materials": materials, "attachments": refs}), files
+
+
+async def insert_revision(
+    session: AsyncSession, actor: User, task_id: uuid.UUID, number: int, c: TaskContent, files: RevisionFiles
 ) -> TaskRevision:
     rev = TaskRevision(
         task_id=task_id, revision_number=number, created_by=actor.id, **{f: getattr(c, f) for f in CONTENT_FIELDS}
@@ -314,6 +438,19 @@ async def _insert_revision(
                 revision_id=rev.id, position=ln, kind="VIDEO_LINK", title=link.title, url=str(link.url)
             )
         )
+    for pn, pdf in enumerate(files.pdfs, len(c.video_links) + 1):
+        session.add(
+            TaskRevisionAttachment(
+                revision_id=rev.id,
+                position=pn,
+                kind="PDF",
+                title=pdf.title,
+                storage_key=pdf.storage_key,
+                file_size=pdf.file_size,
+            )
+        )
+    for mn, (material_id, caption) in enumerate(files.materials, 1):
+        session.add(TaskRevisionMaterial(revision_id=rev.id, material_id=material_id, position=mn, caption=caption))
     await session.flush()
     return rev
 
@@ -347,7 +484,7 @@ async def _labels_for_stage(session: AsyncSession, stage: Stage) -> dict[uuid.UU
 
 async def task_out(session: AsyncSession, task: Task) -> TaskOut:
     stage = await session.get(Stage, task.stage_id)
-    rev = await _current_revision(session, task.id)
+    rev = await current_revision(session, task.id)
     revision = (await load_revisions(session, [rev.id]))[rev.id]
     label = (await _labels_for_stage(session, stage)).get(task.id)
     return TaskOut(
@@ -507,9 +644,10 @@ async def create_task(session: AsyncSession, actor: User, data: TaskCreate) -> T
     task = Task(stage_id=stage.id, position=position, is_active=True)
     session.add(task)
     await session.flush()
-    await _insert_revision(
-        session, actor, task.id, 1, TaskContent.model_validate(data.model_dump(exclude={"stage_id", "position"}))
+    content, files = await resolve_files(
+        session, task.id, TaskContent.model_validate(data.model_dump(exclude={"stage_id", "position"})), None
     )
+    await insert_revision(session, actor, task.id, 1, content, files)
     audit_service.record(
         session, actor.id, "TASK_CREATED", "task", task.id, {"name": data.name, "type": data.task_type}
     )
@@ -523,10 +661,11 @@ async def get_task(session: AsyncSession, task_id: uuid.UUID) -> TaskOut:
 
 async def update_task(session: AsyncSession, actor: User, task_id: uuid.UUID, content: TaskContent) -> TaskOut:
     task = await _get(session, Task, task_id, lock=True)  # serialises revision numbering per task
-    current = await _current_revision(session, task.id)
+    current = await current_revision(session, task.id)
     current_out = (await load_revisions(session, [current.id]))[current.id]
+    content, files = await resolve_files(session, task.id, content, current_out)
     if _content_of(current_out) != _comparable(content):
-        rev = await _insert_revision(session, actor, task.id, current.revision_number + 1, content)
+        rev = await insert_revision(session, actor, task.id, current.revision_number + 1, content, files)
         audit_service.record(session, actor.id, "TASK_UPDATED", "task", task.id, {"revision": rev.revision_number})
         await session.commit()
     return await task_out(session, task)

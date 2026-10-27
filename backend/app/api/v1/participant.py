@@ -1,6 +1,7 @@
 """Participant endpoints (docs/api.md, section Uczestnik)."""
 
 import uuid
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Request, Response, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,8 +19,8 @@ from app.schemas.submission import (
     SubmissionOut,
 )
 from app.schemas.user import UserOut
+from app.services import file_service, quiz_service, user_service
 from app.services import participant_service as svc
-from app.services import quiz_service, user_service
 from app.services import submission_service as subs
 
 router = APIRouter(tags=["participant"])
@@ -134,6 +135,48 @@ async def get_photo(
     # Owner, an instructor with permission for the task, or an admin (BR-17); everyone else gets 404.
     data, mime = await subs.photo_bytes(s, request.app.state.storage, u, submission_id, photo_id)
     return Response(content=data, media_type=mime, headers={"Cache-Control": "private, max-age=3600"})
+
+
+@router.get(
+    "/tasks/{task_id}/materials/{material_id}",
+    response_class=Response,
+    responses={200: {"content": {"image/webp": {}}}},
+    summary="Zdjęcie wzorcowe",
+)
+async def get_material(
+    task_id: uuid.UUID,
+    material_id: uuid.UUID,
+    request: Request,
+    u: CurrentUser = Depends(require_authenticated_user),
+    s: AsyncSession = Session,
+):
+    data, mime = await file_service.material_bytes(s, request.app.state.storage, u, task_id, material_id)
+    return Response(content=data, media_type=mime, headers={"Cache-Control": "private, max-age=3600"})
+
+
+@router.get(
+    "/tasks/{task_id}/attachments/{attachment_id}",
+    response_class=Response,
+    responses={200: {"content": {"application/pdf": {}}}},
+    summary="Załącznik PDF",
+)
+async def get_attachment(
+    task_id: uuid.UUID,
+    attachment_id: uuid.UUID,
+    request: Request,
+    u: CurrentUser = Depends(require_authenticated_user),
+    s: AsyncSession = Session,
+):
+    data, title = await file_service.attachment_bytes(s, request.app.state.storage, u, task_id, attachment_id)
+    return Response(
+        content=data,
+        media_type="application/pdf",
+        headers={
+            "Cache-Control": "private, max-age=3600",
+            "Content-Disposition": f"inline; filename*=UTF-8''{quote(title + '.pdf')}",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.post("/submissions/{submission_id}/submit", response_model=SubmissionOut, summary="Wyślij do oceny")

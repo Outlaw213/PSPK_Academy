@@ -110,6 +110,20 @@ class VideoLinkIn(BaseModel):
         return v
 
 
+class MaterialRef(BaseModel):
+    """A reference photo of this task in a revision (Q-43)."""
+
+    id: uuid.UUID
+    caption: str | None = Field(default=None, max_length=300)
+
+
+class AttachmentRef(BaseModel):
+    """A PDF of this task, by its id in any revision of the task (BR-33). No title = keep its title."""
+
+    id: uuid.UUID
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+
+
 def quiz_invalid(message: str) -> AppError:
     return AppError("QUIZ_INVALID", message, 422)
 
@@ -133,6 +147,8 @@ class TaskContent(BaseModel):
     pass_threshold: int | None = None
     questions: list[QuestionIn] = []
     video_links: list[VideoLinkIn] = []
+    materials: list[MaterialRef] | None = None  # None = keep the current list
+    attachments: list[AttachmentRef] | None = None  # None = keep the current list
 
     @model_validator(mode="after")
     def _quiz_rules(self) -> "TaskContent":
@@ -184,6 +200,23 @@ class VideoLinkOut(BaseModel):
     url: str
 
 
+class MaterialOut(BaseModel):
+    id: uuid.UUID
+    position: int
+    caption: str | None
+    mime_type: str
+    file_size: int
+    width: int
+    height: int
+
+
+class AttachmentOut(BaseModel):
+    id: uuid.UUID
+    position: int
+    title: str
+    file_size: int
+
+
 class RevisionOut(BaseModel):
     id: uuid.UUID
     revision_number: int
@@ -205,6 +238,8 @@ class RevisionOut(BaseModel):
     pass_threshold: int | None
     questions: list[QuestionOut]
     video_links: list[VideoLinkOut]
+    materials: list[MaterialOut]
+    attachments: list[AttachmentOut]  # PDF files
 
 
 class TaskOut(BaseModel):

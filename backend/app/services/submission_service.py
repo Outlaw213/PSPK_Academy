@@ -7,6 +7,7 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import UploadFile
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -231,7 +232,8 @@ async def add_photo(
     if len(raw) > limit:
         raise AppError("PHOTO_TOO_LARGE", f"A photo can be at most {settings.max_upload_size_mb} MB.", 413)
     try:
-        img = process_photo(raw, settings.image_max_edge, settings.image_quality)
+        # ~2 s for a 12 MP photo: off the event loop, so other requests keep flowing
+        img = await run_in_threadpool(process_photo, raw, settings.image_max_edge, settings.image_quality)
     except InvalidImage as exc:
         raise AppError("INVALID_PHOTO_TYPE", "Only JPEG, PNG and WebP photos are accepted.", 422) from exc
 

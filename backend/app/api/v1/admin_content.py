@@ -2,7 +2,7 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Form, Query, Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
@@ -27,6 +27,7 @@ from app.schemas.content import (
     VersionUpdate,
 )
 from app.services import content_service as svc
+from app.services import file_service
 
 router = APIRouter(prefix="/admin", tags=["admin: content"])
 Admin = Depends(require_admin)
@@ -121,3 +122,29 @@ async def deactivate_task(task_id: uuid.UUID, a: CurrentUser = Admin, s: AsyncSe
 @router.post("/tasks/{task_id}/activate", response_model=TaskOut)
 async def activate_task(task_id: uuid.UUID, a: CurrentUser = Admin, s: AsyncSession = Session):
     return await svc.set_task_active(s, a.user, task_id, True)
+
+
+@router.post("/tasks/{task_id}/materials", status_code=201, response_model=TaskOut, summary="Dodaj zdjęcie wzorcowe")
+async def add_material(
+    task_id: uuid.UUID,
+    file: UploadFile,
+    request: Request,
+    caption: str | None = Form(default=None, max_length=300),
+    a: CurrentUser = Admin,
+    s: AsyncSession = Session,
+):
+    st = request.app.state
+    return await file_service.add_material(s, st.storage, st.settings, a.user, task_id, file, caption)
+
+
+@router.post("/tasks/{task_id}/attachments", status_code=201, response_model=TaskOut, summary="Dodaj załącznik PDF")
+async def add_attachment(
+    task_id: uuid.UUID,
+    file: UploadFile,
+    request: Request,
+    title: str | None = Form(default=None, max_length=300),
+    a: CurrentUser = Admin,
+    s: AsyncSession = Session,
+):
+    st = request.app.state
+    return await file_service.add_pdf(s, st.storage, st.settings, a.user, task_id, file, title)

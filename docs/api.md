@@ -33,9 +33,9 @@ Klient przeglądarkowy wysyła nagłówek `X-Client: web`. Wtedy `refresh_token`
 | GET | /me/paths/{path_version_id} | 200 wersja + etapy + zadania (bez statusów) | 404 |
 | GET | /me/paths/{path_version_id}/progress | 200 struktura z §17 (nazwy wg widocznej rewizji, każde zadanie z `label`, np. `"E1.2"` — BR-34) | 404 |
 | GET | /tasks/{task_id} | 200 zadanie: widoczna rewizja (BR-19) + `status` + zdjęcia wzorcowe + **[+]** `content_md`, załączniki, pytania quizu (bez `is_correct` przed zaliczeniem) | 404 |
-| GET | **[+]** /tasks/{task_id}/attachments/{attachment_id} | 200 PDF (stream) | 404 |
+| GET | **[+]** /tasks/{task_id}/attachments/{attachment_id} | 200 PDF (stream); uczestnik zapisany na wersję, instruktor z uprawnieniem, admin | 404 |
 | POST | **[+]** /tasks/{task_id}/quiz-attempts | 201 submission + assessment z `score` (`answers: [{question_id, option_ids[]}]`) | 403 NO_ACTIVE_ENROLLMENT, 409 TASK_LOCKED, 409 TASK_ALREADY_PASSED, 409 TASK_NOT_QUIZ, 422 QUIZ_ANSWERS_INVALID |
-| GET | **[+]** /tasks/{task_id}/materials/{material_id} | 200 obraz (stream) | 404 |
+| GET | **[+]** /tasks/{task_id}/materials/{material_id} | 200 obraz `image/webp` (stream); dostęp jak przy załącznikach | 404 |
 | GET | /tasks/{task_id}/submissions | 200 historia prób (z ocenami) | 404 |
 | POST | /tasks/{task_id}/submissions | 201 szkic `DRAFT` (JSON: `comment?`) | 403 NO_ACTIVE_ENROLLMENT, 409 TASK_LOCKED, 409 TASK_ALREADY_PASSED, 409 SUBMISSION_PENDING, 409 TASK_IS_COURSE, 409 TASK_IS_QUIZ |
 | GET | /submissions/{submission_id} | 200 zgłoszenie + zdjęcia + ocena + rewizja zadania | 404 |
@@ -71,10 +71,10 @@ Klient przeglądarkowy wysyła nagłówek `X-Client: web`. Wtedy `refresh_token`
 | GET | /admin/path-versions/{version_id} | pełna struktura (z zadaniami wyłączonymi) |
 | PUT | **[+]** /admin/path-versions/{version_id} | `description`, `is_active` (przyjmowanie zapisów) |
 | POST / PUT | /admin/stages, /admin/stages/{id} | |
-| POST / PUT | /admin/tasks, /admin/tasks/{id} | każdy zapis treści tworzy nową rewizję (BR-19); `material_ids[]` = uporządkowana lista zdjęć wzorcowych |
+| POST / PUT | /admin/tasks, /admin/tasks/{id} | każdy zapis treści tworzy nową rewizję (BR-19); `materials[{id, caption}]` i `attachments[{id, title}]` = uporządkowane listy zdjęć wzorcowych i PDF (pominięte = bez zmian) |
 | GET | **[+]** /admin/tasks/{id}/revisions | historia rewizji |
-| POST | **[+]** /admin/tasks/{id}/materials | upload zdjęcia wzorcowego (multipart) → `material_id`, podpinany przez PUT zadania |
-| POST | **[+]** /admin/tasks/{id}/attachments | upload PDF (multipart) → `attachment_id`; linki do filmów i pytania quizu przekazywane w PUT zadania (nowa rewizja) → 422 QUIZ_INVALID, 413 ATTACHMENT_TOO_LARGE, 422 INVALID_ATTACHMENT_TYPE |
+| POST | **[+]** /admin/tasks/{id}/materials | upload zdjęcia wzorcowego (multipart `file`, `caption?`) → 201 zadanie z nową wersją treści (zdjęcie dopisane na koniec) → 413 PHOTO_TOO_LARGE, 422 INVALID_PHOTO_TYPE |
+| POST | **[+]** /admin/tasks/{id}/attachments | upload PDF (multipart `file`, `title?`) → 201 zadanie z nową wersją treści (PDF dopisany na koniec) → 413 ATTACHMENT_TOO_LARGE, 422 INVALID_ATTACHMENT_TYPE |
 | PUT | **[+]** /admin/tasks/{id}/stage | przeniesienie zadania do innego etapu tej samej wersji (na koniec) |
 | POST | **[+]** /admin/tasks/{id}/deactivate, /activate | BR-20 → 409 TASK_HAS_PENDING_SUBMISSIONS |
 | PUT | **[+]** /admin/stages/{id}/tasks/order, /admin/path-versions/{id}/stages/order | zmiana kolejności całej listy w jednej transakcji (BR-16) |
@@ -88,11 +88,14 @@ Klient przeglądarkowy wysyła nagłówek `X-Client: web`. Wtedy `refresh_token`
 Listy są stronicowane (`limit`, `offset`) i zwracają `{items, total, limit, offset}`.
 
 **Treść zadania** (M4). `POST /admin/tasks`: `{stage_id, position?}` + treść; bez `position` zadanie trafia na koniec etapu; powstaje zadanie i jego wersja treści 1.
-`PUT /admin/tasks/{id}`: pełna treść — `name`, `task_type`, `description`, `instructions`, `content_md`, `assignment`, `evaluation_criteria`, `submission_requirements`, `material`, `quantity_description`, `expected_duration_days`, `estimated_minutes`, `difficulty`, `pass_threshold`, `questions[{text, kind, options[{text, is_correct}]}]`, `video_links[{title, url}]`. Każdy zapis tworzy nową wersję treści; zapis identyczny z aktualną → 200 bez nowej wersji. Pytania zapisywane tylko dla `QUIZ`.
+`PUT /admin/tasks/{id}`: pełna treść — `name`, `task_type`, `description`, `instructions`, `content_md`, `assignment`, `evaluation_criteria`, `submission_requirements`, `material`, `quantity_description`, `expected_duration_days`, `estimated_minutes`, `difficulty`, `pass_threshold`, `questions[{text, kind, options[{text, is_correct}]}]`, `video_links[{title, url}]`, **[M9]** `materials[{id, caption}]`, `attachments[{id, title}]`. Każdy zapis tworzy nową wersję treści; zapis identyczny z aktualną → 200 bez nowej wersji. Pytania zapisywane tylko dla `QUIZ`.
 `GET /admin/path-versions/{id}`: wersja + etapy (po `position`) → zadania z `label` (BR-34), `is_active`, `position` i aktualną wersją treści.
 Kolejność: `PUT …/order` z `{"ids": [...]}` — pełna lista id w nowej kolejności; inna zawartość → 422 ORDER_MISMATCH.
 `PUT /admin/tasks/{id}/stage`: `{stage_id}` — na koniec wskazanego etapu tej samej wersji; inny → 422 STAGE_OUTSIDE_VERSION.
-Wgrywanie plików (`/materials`, `/attachments`) — od M9.
+**Pliki zadań** (M9). Wgranie zdjęcia wzorcowego albo PDF od razu tworzy nową wersję treści z plikiem dopisanym na koniec listy — plik jest częścią wersji treści (BR-19, Q-43) i nie istnieje „luzem”. Zdjęcie przechodzi tę samą obróbkę co zdjęcia zgłoszeń (ADR-25, WebP — Q-67); PDF jest sprawdzany po zawartości (nagłówek `%PDF-` i znacznik `%%EOF`) i zapisywany bez zmian.
+Kolejność, podpisy, tytuły i usuwanie z wersji treści: `PUT /admin/tasks/{id}` z `materials[{id, caption}]` i `attachments[{id, title}]` (id z bieżącej albo wcześniejszej wersji treści tego zadania; inne → 422 UNKNOWN_FILE). Brak pola = listy bez zmian. Pliki nie są usuwane z dysku — starsze wersje treści i zaliczone zadania dalej je pokazują.
+W wersji treści: `materials[{id, position, caption, mime_type, file_size, width, height}]`, `attachments[{id, position, title, file_size}]` (PDF); linki do filmów jak dotąd w `video_links`.
+Pobieranie (`/tasks/{id}/materials/{mid}`, `/tasks/{id}/attachments/{aid}`): admin, instruktor z uprawnieniem do etapu, uczestnik z zapisem na tę wersję (także zakończonym — historia, BR-20); pozostali → 404. Kopia wersji ścieżki (Q-07) przenosi pliki (te same pliki na dysku).
 
 **Zgłoszenia uczestnika** (M6). Zgłoszenie: `{id, task_id, attempt_number, status, comment, task_revision_id, submitted_at, claimed_at, assessed_at, cancelled_at, created_at, photos[{id, position, mime_type, file_size, width, height}], assessment{result, comment, score, instructor{first_name, last_name} | null, created_at} | null}`; `GET /submissions/{id}` dodatkowo `revision` (jak w `/tasks/{id}`, gdy wysłane).
 Zdjęcie: `multipart/form-data`, pole `file`, jedno na żądanie; zapisywane po przetworzeniu (ADR-25), odczyt `GET /submissions/{id}/photos/{photo_id}` (`image/webp`).
@@ -153,6 +156,7 @@ Kursy: `GET /instructor/courses?path_version_id=` → `[{task{id, label, name}, 
 | QUIZ_INVALID | 422 | quiz bez pytań, pytanie bez poprawnej odpowiedzi, próg poza 1–100 |
 | ATTACHMENT_TOO_LARGE | 413 | > MAX_ATTACHMENT_SIZE_MB |
 | INVALID_ATTACHMENT_TYPE | 422 | plik inny niż PDF (po zawartości) |
+| UNKNOWN_FILE | 422 | `materials` / `attachments` w treści zadania wskazują plik spoza tego zadania albo powtórzony |
 | TASK_NOT_COURSE | 409 | wynik kursu dla zadania, które nie jest kursem |
 | TASK_IS_COURSE | 409 | uczestnik próbuje utworzyć zgłoszenie dla kursu (BR-30) |
 | DATABASE_UNAVAILABLE | 503 | `/health`: brak połączenia z bazą |

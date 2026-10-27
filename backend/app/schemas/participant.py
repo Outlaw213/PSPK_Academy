@@ -5,6 +5,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.schemas.content import AttachmentOut, MaterialOut
 from app.schemas.enrollment import PathRef
 
 
@@ -105,6 +106,8 @@ class PublicRevision(BaseModel):
     pass_threshold: int | None
     questions: list[PublicQuestion]
     video_links: list[PublicVideoLink]
+    materials: list[MaterialOut]
+    attachments: list[AttachmentOut]
 
 
 class StageRef(BaseModel):

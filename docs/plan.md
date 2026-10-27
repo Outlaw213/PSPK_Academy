@@ -71,18 +71,18 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] Dostęp do zdjęć zgłoszeń: właściciel, instruktor z uprawnieniem, admin (przeniesione z M9)
 **DoD:** kryteria §29 „Instructor” (część claim).
 
-## M8 — Ocena i ostateczne zaliczenie (STEP 14) ← JESTEŚMY TUTAJ
+## M8 — Ocena i ostateczne zaliczenie (STEP 14) ✔ zaakceptowane 2026-10-27
 - [x] Assessment (`POST /submissions/{id}/assessment`), przejścia stanów, automatyczne COMPLETED zapisu, zgłoszenie oceniane wg swojej rewizji (`test_assessment.py`)
 - [x] Wyniki kursów przez instruktora: lista kursów w zakresie, uczestnicy, wpisanie wyniku (BR-30, FR-INS-06, `test_courses.py`)
 - [x] Quiz z automatyczną oceną (BR-32, `test_quiz.py`) — zrobione już w M6
 - [x] TEST 3, TEST 4, TEST 6, BR-07, BR-13, BR-15; `test_structure.py` i `test_enrollments.py` (BR-29) — zrobione w M5
 **DoD:** kryteria §29 „Final pass”.
 
-## M9 — Magazyn obiektów i pliki (STEP 15)
-- [ ] Upload zdjęć wzorcowych i załączników PDF przez admina (`/admin/tasks/{id}/materials`, `/attachments`), przeniesione z M4
-- [ ] (magazyn na dysku i przetwarzanie zdjęć powstają już w M6; tu: PDF, zdjęcia wzorcowe, dostęp instruktora i admina do zdjęć, test integracyjny)
-- [ ] Endpointy pobierania zdjęć zgłoszeń, zdjęć wzorcowych i załączników PDF z kontrolą uprawnień (BR-33, `test_attachments.py`)
-- [ ] Zły typ, za duży plik, test integracyjny z prawdziwym magazynem
+## M9 — Magazyn obiektów i pliki (STEP 15) ← JESTEŚMY TUTAJ
+- [x] Upload zdjęć wzorcowych i załączników PDF przez admina (`/admin/tasks/{id}/materials`, `/attachments`) — od razu nowa wersja treści; kolejność, podpisy i usuwanie przez PUT zadania; kopia wersji ścieżki przenosi pliki
+- [x] Pobieranie zdjęć wzorcowych i PDF z kontrolą uprawnień (BR-17, BR-33, `test_attachments.py`); zdjęcia zgłoszeń — już w M7
+- [x] Zły typ (po zawartości), za duży plik, brak plików-sierot na dysku; testy na prawdziwym magazynie dyskowym (`STORAGE_ROOT` testów)
+- [x] Pomiar rozmiarów zdjęć po obróbce; obróbka zdjęcia poza pętlą zdarzeń serwera (≈ 2 s na zdjęcie 12 MP)
 **DoD:** kryteria §29 „Submissions” (zdjęcia).
 
 ## M10 — AuditLog i podglądy admina (STEP 16)

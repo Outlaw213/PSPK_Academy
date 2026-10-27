@@ -82,7 +82,9 @@ async def task(
 async def revision_of(db: AsyncSession, t: Task) -> TaskRevision:
     from sqlalchemy import select
 
-    return (await db.execute(select(TaskRevision).where(TaskRevision.task_id == t.id))).scalars().first()
+    # The current revision, as a real submit records it (BR-19).
+    stmt = select(TaskRevision).where(TaskRevision.task_id == t.id).order_by(TaskRevision.revision_number.desc())
+    return (await db.execute(stmt)).scalars().first()
 
 
 async def enrollment(db: AsyncSession, u: User, v: PathVersion, status: str = "ACTIVE") -> Enrollment:
