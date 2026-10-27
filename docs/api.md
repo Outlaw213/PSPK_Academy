@@ -72,6 +72,7 @@ Klient przeglądarkowy wysyła nagłówek `X-Client: web`. Wtedy `refresh_token`
 | PUT | **[+]** /admin/path-versions/{version_id} | `description`, `is_active` (przyjmowanie zapisów) |
 | POST / PUT | /admin/stages, /admin/stages/{id} | |
 | POST / PUT | /admin/tasks, /admin/tasks/{id} | każdy zapis treści tworzy nową rewizję (BR-19); `materials[{id, caption}]` i `attachments[{id, title}]` = uporządkowane listy zdjęć wzorcowych i PDF (pominięte = bez zmian) |
+| GET | **[+]** /admin/tasks/{id} | zadanie z aktualną wersją treści (z kluczem quizu) |
 | GET | **[+]** /admin/tasks/{id}/revisions | historia rewizji |
 | POST | **[+]** /admin/tasks/{id}/materials | upload zdjęcia wzorcowego (multipart `file`, `caption?`) → 201 zadanie z nową wersją treści (zdjęcie dopisane na koniec) → 413 PHOTO_TOO_LARGE, 422 INVALID_PHOTO_TYPE |
 | POST | **[+]** /admin/tasks/{id}/attachments | upload PDF (multipart `file`, `title?`) → 201 zadanie z nową wersją treści (PDF dopisany na koniec) → 413 ATTACHMENT_TOO_LARGE, 422 INVALID_ATTACHMENT_TYPE |

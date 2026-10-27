@@ -85,16 +85,16 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] Pomiar rozmiarów zdjęć po obróbce; obróbka zdjęcia poza pętlą zdarzeń serwera (≈ 2 s na zdjęcie 12 MP)
 **DoD:** kryteria §29 „Submissions” (zdjęcia).
 
-## M10 — AuditLog i podglądy admina (STEP 16) ← JESTEŚMY TUTAJ
+## M10 — AuditLog i podglądy admina (STEP 16) ✔ zaakceptowane 2026-10-27
 - [x] Wpisy dla wszystkich akcji z `api.md` w transakcjach operacji — test porównuje katalog z `api.md` z tym, co faktycznie trafia do bazy; operacja odrzucona = brak wpisu; brak haseł i tokenów
 - [x] `/admin/submissions` (+ szczegóły z wersją treści i wszystkimi próbami), `/admin/audit-logs` (filtry, zakres dat, paginacja)
 - [x] `test_audit.py`
 **DoD:** kryteria §29 „Audit”.
 
-## M11 — Domknięcie MVP backendu (STEP 17–18)
-- [ ] Seed (`python -m app.seed`): admin, instruktor, uczestnik, osoba z kilkoma rolami, „Podstawy kowalstwa” wg Q-36 (lista `docs/assets/lista-zadan-sciezki.jpeg`, karty z `docs/assets/`)
-- [ ] README (§33), zgodność `/openapi.json` z `api.md`
-- [ ] Pełna regresja, przejście checklisty §29 punkt po punkcie
+## M11 — Domknięcie MVP backendu (STEP 17–18) ← JESTEŚMY TUTAJ
+- [x] Seed (`python -m app.seed`): admin, instruktor, uczestnik, osoba z kilkoma rolami, „Podstawy kowalstwa” wg Q-36 (lista `docs/assets/lista-zadan-sciezki.jpeg`, karty z `docs/assets/`) — `test_seed.py`
+- [x] README (§33), zgodność `/openapi.json` z `api.md` — `test_openapi.py`
+- [x] Pełna regresja, przejście checklisty §29 punkt po punkcie — `docs/acceptance-checklist.md`
 **DoD:** wszystkie kryteria §29 odhaczone na podstawie prawdziwych wyników testów.
 
 ## M11a — Staging na Proxmoxie (ADR-23)
