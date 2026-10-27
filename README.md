@@ -7,7 +7,8 @@ System edukacyjny Polskiego Stowarzyszenia Pasjonatów Kowalstwa: ścieżki nauk
 - **M1 — szkielet backendu** (FastAPI + PostgreSQL 18 w Docker Compose): `/health`, `/docs`, jednolity format błędów, testy.
 - **M2 — baza danych**: 21 tabel, migracja 0001.
 - **M3 — konta i logowanie**: rejestracja z akceptacją admina, sesje, role, panel użytkowników (API).
-- Dalej **M4–M11** wg `docs/plan.md`.
+- **M4 — treść edukacyjna** (API admina): ścieżki, wersje (także kopia z uprawnieniami), etapy, zadania wszystkich typów z wersjami treści, quizy, linki do filmów, kolejność, wyłączanie zadań.
+- Dalej **M5–M11** wg `docs/plan.md`.
 
 ## Dokumentacja
 Zacznij od `docs/sdd-process.md`. Specyfikacja wejściowa: `PSPK_Academy_specyfication_v1.txt`.

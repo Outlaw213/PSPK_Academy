@@ -40,7 +40,7 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] Backend w Dockerze migruje bazę przy starcie (`alembic upgrade head`)
 **DoD:** `alembic upgrade head` i `downgrade base` przechodzą na czystej bazie.
 
-## M3 — Uwierzytelnianie i konta (STEP 8) ← GOTOWE, CZEKA NA AKCEPTACJĘ
+## M3 — Uwierzytelnianie i konta (STEP 8) ✔ zaakceptowane 2026-10-27
 - [x] register (`PENDING_APPROVAL`) / login / refresh / logout / me / change-password, Argon2id, JWT; ciasteczko dla przeglądarki (ADR-26)
 - [x] wiele ról, dependencies `require_*`
 - [x] admin: użytkownicy, zatwierdzanie/odrzucanie, ustawienie hasła, dezaktywacja; automatyczne zwolnienie zgłoszeń (BR-26)
@@ -48,9 +48,9 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] `test_auth.py`, `test_admin_users.py`, `test_cli.py`: FR-AUTH-01..08, FR-ADM-01, BR-26, BR-27, BR-28
 **DoD:** kryteria §29 „Authentication”.
 
-## M4 — Treść edukacyjna, rewizje i wersje (STEP 9)
-- [ ] Admin: ścieżki, wersje (kopia z uprawnieniami, włączanie zapisów), etapy, zadania wszystkich typów z rewizjami (pytania quizu, Markdown, linki do filmów, przenoszenie między etapami), zdjęcia wzorcowe (magazyn in-memory), kolejność, wyłączanie zadań
-- [ ] `test_paths.py`, `test_revisions.py` (część admin), `test_structure.py` (część bez zgłoszeń): TEST 13, BR-16, BR-19, BR-24
+## M4 — Treść edukacyjna, rewizje i wersje (STEP 9) ← GOTOWE, CZEKA NA AKCEPTACJĘ
+- [x] Admin: ścieżki, wersje (kopia z uprawnieniami, włączanie zapisów), etapy, zadania wszystkich typów z rewizjami (pytania quizu, Markdown, linki do filmów, przenoszenie między etapami), kolejność, wyłączanie zadań; oznaczenia E1.2 (BR-34). Wgrywanie plików (zdjęcia wzorcowe, PDF) → M9. BR-15 przy wyłączeniu zadania → M5 (wymaga statusów).
+- [x] `test_paths.py`, `test_quiz_admin.py`, `test_revisions.py` (część admin), `test_structure.py` (część bez zgłoszeń): TEST 13, BR-16, BR-19, BR-24
 **DoD:** kryteria §29 „Learning paths”.
 
 ## M5 — Zapisy i statusy zadań (STEP 10, 12)
@@ -77,6 +77,7 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 **DoD:** kryteria §29 „Final pass”.
 
 ## M9 — Magazyn obiektów i pliki (STEP 15)
+- [ ] Upload zdjęć wzorcowych i załączników PDF przez admina (`/admin/tasks/{id}/materials`, `/attachments`), przeniesione z M4
 - [ ] `LocalDiskStorage` (ADR-24); walidacja po zawartości; skalowanie do 2560 px + WebP, usuwanie EXIF (ADR-25); kompensacja przy błędzie transakcji
 - [ ] Endpointy pobierania zdjęć zgłoszeń, zdjęć wzorcowych i załączników PDF z kontrolą uprawnień (BR-33, `test_attachments.py`)
 - [ ] Zły typ, za duży plik, test integracyjny z prawdziwym magazynem

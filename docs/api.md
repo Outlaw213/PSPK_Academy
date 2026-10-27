@@ -85,7 +85,14 @@ Klient przeglądarkowy wysyła nagłówek `X-Client: web`. Wtedy `refresh_token`
 | GET | **[+]** /admin/submissions, /admin/submissions/{id} | podgląd (FR-ADM-05), filtry: `path_version_id`, `status`, `user_id`, `instructor_id` |
 | GET | **[+]** /admin/audit-logs | podgląd (FR-ADM-06), filtry: `action`, `user_id`, `entity_type`, `entity_id`, `from`, `to`; paginacja |
 
-Listy są stronicowane (`limit`, `offset`).
+Listy są stronicowane (`limit`, `offset`) i zwracają `{items, total, limit, offset}`.
+
+**Treść zadania** (M4). `POST /admin/tasks`: `{stage_id, position?}` + treść; bez `position` zadanie trafia na koniec etapu; powstaje zadanie i jego wersja treści 1.
+`PUT /admin/tasks/{id}`: pełna treść — `name`, `task_type`, `description`, `instructions`, `content_md`, `assignment`, `evaluation_criteria`, `submission_requirements`, `material`, `quantity_description`, `expected_duration_days`, `estimated_minutes`, `difficulty`, `pass_threshold`, `questions[{text, kind, options[{text, is_correct}]}]`, `video_links[{title, url}]`. Każdy zapis tworzy nową wersję treści; zapis identyczny z aktualną → 200 bez nowej wersji. Pytania zapisywane tylko dla `QUIZ`.
+`GET /admin/path-versions/{id}`: wersja + etapy (po `position`) → zadania z `label` (BR-34), `is_active`, `position` i aktualną wersją treści.
+Kolejność: `PUT …/order` z `{"ids": [...]}` — pełna lista id w nowej kolejności; inna zawartość → 422 ORDER_MISMATCH.
+`PUT /admin/tasks/{id}/stage`: `{stage_id}` — na koniec wskazanego etapu tej samej wersji; inny → 422 STAGE_OUTSIDE_VERSION.
+Wgrywanie plików (`/materials`, `/attachments`) — od M9.
 
 ## Katalog błędów
 
@@ -114,6 +121,8 @@ Listy są stronicowane (`limit`, `offset`).
 | TOO_MANY_PHOTOS | 422 | > MAX_SUBMISSION_PHOTOS |
 | INVALID_PHOTO_TYPE | 422 | niedozwolony typ (sprawdzany po zawartości) |
 | PHOTO_TOO_LARGE | 413 | > MAX_UPLOAD_SIZE_MB |
+| ORDER_MISMATCH | 422 | lista w `…/order` nie zawiera dokładnie elementów porządkowanego zbioru |
+| STAGE_OUTSIDE_VERSION | 422 | przeniesienie zadania do etapu innej wersji |
 | TASK_HAS_PENDING_SUBMISSIONS | 409 | wyłączenie zadania z oczekującymi zgłoszeniami |
 | PATH_VERSION_INACTIVE | 409 | zapis do wersji nieprzyjmującej zapisów |
 | ALREADY_ENROLLED | 409 | zapis do tej wersji istnieje albo aktywny zapis do innej wersji tej ścieżki |
