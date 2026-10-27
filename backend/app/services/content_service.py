@@ -47,7 +47,8 @@ from app.schemas.content import (
     VersionUpdate,
     VideoLinkOut,
 )
-from app.services import audit_service
+from app.services import audit_service, enrollment_service
+from app.services.task_service import task_label
 
 # Revision columns copied from TaskContent one to one.
 CONTENT_FIELDS = (
@@ -70,11 +71,6 @@ CONTENT_FIELDS = (
 
 def not_found() -> AppError:
     return AppError("NOT_FOUND", "Not found.", 404)
-
-
-def task_label(stage_position: int, active_index: int) -> str:
-    """BR-34: E{stage}.{n}, n counting active tasks of the stage in order. The only place labels are made."""
-    return f"E{stage_position}.{active_index}"
 
 
 async def _get(session: AsyncSession, model, obj_id: uuid.UUID, lock: bool = False):
@@ -580,6 +576,11 @@ async def set_task_active(session: AsyncSession, actor: User, task_id: uuid.UUID
         )
     task.is_active = active
     audit_service.record(session, actor.id, "TASK_ACTIVATED" if active else "TASK_DEACTIVATED", "task", task.id)
+    if not active:
+        # BR-15: removing the last unpassed task may complete enrollments (Q-42).
+        await session.flush()
+        stage = await session.get(Stage, task.stage_id)
+        await enrollment_service.refresh_completion_for_version(session, stage.path_version_id, actor.id)
     await session.commit()
     await session.refresh(task)
     return await task_out(session, task)

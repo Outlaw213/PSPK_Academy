@@ -48,15 +48,16 @@ Mapowanie na STEP z §35 specyfikacji podane w nawiasach. Zakres M1–M11 zostan
 - [x] `test_auth.py`, `test_admin_users.py`, `test_cli.py`: FR-AUTH-01..08, FR-ADM-01, BR-26, BR-27, BR-28
 **DoD:** kryteria §29 „Authentication”.
 
-## M4 — Treść edukacyjna, rewizje i wersje (STEP 9) ← GOTOWE, CZEKA NA AKCEPTACJĘ
+## M4 — Treść edukacyjna, rewizje i wersje (STEP 9) ✔ zaakceptowane 2026-10-27
 - [x] Admin: ścieżki, wersje (kopia z uprawnieniami, włączanie zapisów), etapy, zadania wszystkich typów z rewizjami (pytania quizu, Markdown, linki do filmów, przenoszenie między etapami), kolejność, wyłączanie zadań; oznaczenia E1.2 (BR-34). Wgrywanie plików (zdjęcia wzorcowe, PDF) → M9. BR-15 przy wyłączeniu zadania → M5 (wymaga statusów).
 - [x] `test_paths.py`, `test_quiz_admin.py`, `test_revisions.py` (część admin), `test_structure.py` (część bez zgłoszeń): TEST 13, BR-16, BR-19, BR-24
 **DoD:** kryteria §29 „Learning paths”.
 
-## M5 — Zapisy i statusy zadań (STEP 10, 12)
-- [ ] Admin: zapisy (utworzenie, lista, anulowanie); uczestnik: `/me/paths`, szczegóły, `/progress`, `/tasks/{id}` z widoczną rewizją
-- [ ] `compute_task_statuses`, `get_previous_task`, `is_task_available`
-- [ ] Testy jednostkowe statusów + TEST 1, TEST 2, przejście między etapami, zapis nieaktywny (Q-39), kursy poza kolejnością i bramka etapu (BR-02, BR-31)
+## M5 — Zapisy i statusy zadań (STEP 10, 12) ← GOTOWE, CZEKA NA AKCEPTACJĘ
+- [x] Admin: zapisy (utworzenie, lista, anulowanie); uczestnik: `/me/paths`, szczegóły, `/progress`, `/tasks/{id}` z widoczną rewizją
+- [x] `compute_path_statuses` (jedyne miejsce statusów, stała liczba zapytań), `get_previous_task`, `is_task_available`
+- [x] Testy jednostkowe statusów + TEST 1, TEST 2, przejście między etapami, zapis nieaktywny (Q-39), kursy poza kolejnością i bramka etapu (BR-02, BR-31)
+- [x] BR-15 (ukończenie zapisu) przy wyłączeniu zadania; BR-29 anulowanie zapisu anuluje otwarte próby; Q-45 reaktywacja
 **DoD:** kryteria §29 „Enrollment”.
 
 ## M6 — Zgłoszenia: szkic, zdjęcia, wysyłka, historia (STEP 11)

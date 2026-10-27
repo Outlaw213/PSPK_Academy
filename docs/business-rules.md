@@ -46,6 +46,7 @@ Słowa kluczowe: **MUSI** = wymaganie twarde (test obowiązkowy).
 ## 2. Wyliczanie statusu zadania (jedno miejsce: `task_service`)
 
 Wejście: zapis uczestnika `E` do wersji `V`; aktywne zadania `T1..Tn` uporządkowane po `(stage.position, task.position)`.
+Kolejność i typy zadań wynikają wyłącznie z tego, co ustawił admin (pozycje etapów i zadań, `task_type`, `is_active` — Q-63); nic nie jest zakodowane na sztywno, a każda zmiana admina od razu zmienia statusy (BR-16).
 `prev(Ti)` = poprzednie aktywne zadanie niebędące kursem w tym samym etapie; `gate(S)` = wszystkie aktywne zadania etapów o pozycji < `S.position` mają `PASSED` (Q-57).
 Dla każdego `Ti`: `latest(Ti)` = zgłoszenie o najwyższym `attempt_number` z pominięciem `CANCELLED`; `passed(Ti)` = istnieje zgłoszenie `PASSED`.
 

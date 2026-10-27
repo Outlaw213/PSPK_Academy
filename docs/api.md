@@ -94,6 +94,12 @@ Kolejność: `PUT …/order` z `{"ids": [...]}` — pełna lista id w nowej kole
 `PUT /admin/tasks/{id}/stage`: `{stage_id}` — na koniec wskazanego etapu tej samej wersji; inny → 422 STAGE_OUTSIDE_VERSION.
 Wgrywanie plików (`/materials`, `/attachments`) — od M9.
 
+**Widok uczestnika** (M5). `GET /me/paths/{path_version_id}/progress`:
+`{path: {id, name, version}, enrollment_status, progress: {completed, total}, stages: [{id, name, position, gate_open, tasks: [{id, label, name, task_type, position, status}]}]}` — tylko aktywne zadania, etapy bez aktywnych zadań pominięte (BR-01). Kolejność i typy dokładnie takie, jak ustawił admin.
+`GET /tasks/{task_id}`: `{id, label, stage: {id, name, position}, status, revision}` — `revision` jak w API admina, ale pytania quizu **bez** `is_correct` (BR-32). Zadanie wyłączone albo spoza zapisów użytkownika → 404.
+`GET /me/paths`: lista zapisów `{id, status, enrolled_at, completed_at, path: {id, name, version}, path_version_id, progress}`.
+`POST /admin/enrollments` `{user_id, path_version_id}` → 201 zapis; ponowny zapis do wersji z anulowanym zapisem → 200 i ten sam zapis znów `ACTIVE` (Q-45).
+
 ## Katalog błędów
 
 | Kod | HTTP | Kiedy |
